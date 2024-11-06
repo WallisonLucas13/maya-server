@@ -82,7 +82,9 @@ public class ConversationService {
         List<MessageModel> messages = conversation.getMessages();
         messages.add(messageModel);
         conversation.setMessages(messages);
-        conversation.setTitle(extractedTitle);
+        if(!extractedTitle.isBlank()) {
+            conversation.setTitle(extractedTitle);
+        }
         conversation.setUsername(username);
         return conversationRepository.save(conversation);
     }
@@ -104,23 +106,30 @@ public class ConversationService {
         List<ConversationModel> conversations = conversationRepository
                 .findAllByUsername(username);
 
-        return conversations.stream()
+        List<ConversationResponse> sortedConversations = new ArrayList<>(conversations.stream()
                 .map(conversation -> {
                     MessageModel lastMessage = findLastUserMessage(conversation);
 
                     return ConversationResponse.builder()
-                    .id(conversation.getId())
-                    .title(conversation.getTitle())
-                        .lastUserMessage(MessageResponse.builder()
-                                .id(lastMessage.getId())
-                                .type(lastMessage.getType())
-                                .message(lastMessage.getMessage())
-                                .createdAt(lastMessage.getCreatedAt())
-                                .build())
-                    .createdAt(conversation.getCreatedAt())
-                    .build();
+                            .id(conversation.getId())
+                            .username(conversation.getUsername())
+                            .title(conversation.getTitle())
+                            .lastUserMessage(MessageResponse.builder()
+                                    .id(lastMessage.getId())
+                                    .type(lastMessage.getType())
+                                    .message(lastMessage.getMessage())
+                                    .createdAt(lastMessage.getCreatedAt())
+                                    .build())
+                            .createdAt(conversation.getCreatedAt())
+                            .build();
                 })
-                .toList();
+                .toList());
+
+        sortedConversations
+                .sort(Comparator.comparing((ConversationResponse c) -> c.getLastUserMessage()
+                        .getCreatedAt()).reversed());
+
+        return sortedConversations;
     }
 
     private MessageModel findLastUserMessage(ConversationModel conversation){
@@ -165,7 +174,7 @@ public class ConversationService {
 
     private String removeTitleBlock(String message) {
         String regex = "<([\\s\\S]*?)>|\"\"";
-        return message.replaceAll(regex, "").trim();
+        return message.replaceAll(regex, "").trim().replaceAll("[\"\\n\\r]+$", "");
     }
 
 }

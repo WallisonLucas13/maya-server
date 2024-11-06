@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/mayaAI")
-@CrossOrigin("*")
+@CrossOrigin(origins = "http://localhost:4200")
 public class ConversationController {
 
     @Autowired

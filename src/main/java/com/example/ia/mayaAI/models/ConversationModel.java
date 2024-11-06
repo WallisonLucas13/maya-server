@@ -20,7 +20,6 @@ public class ConversationModel {
     private UUID id;
 
     private String username;
-
     private String title;
 
     @OneToMany(cascade = CascadeType.REMOVE)
