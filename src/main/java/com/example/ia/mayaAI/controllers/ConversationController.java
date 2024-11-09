@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/mayaAI")
+@RequestMapping("/api/maya")
 @CrossOrigin(origins = "http://localhost:4200")
 public class ConversationController {
 
@@ -25,24 +25,20 @@ public class ConversationController {
     @PostMapping("/mensagem")
     public ResponseEntity<MessageModel> sendMessage(
             @RequestBody MessageInput input,
-            @RequestParam(value = "username") String username,
             @RequestParam(value = "conversationId", required = false) UUID conversationId){
-        return ResponseEntity.ok(conversationService.sendMessage(conversationId, username, input));
+        return ResponseEntity.ok(conversationService.sendMessage(conversationId, input));
     }
 
     @GetMapping("/conversa")
     public ResponseEntity<ConversationModel> getConversation(
-            @RequestParam(value = "conversationId", required = false) UUID conversationId,
-            @RequestParam(value = "username") String username
+            @RequestParam(value = "conversationId", required = false) UUID conversationId
     ){
         return ResponseEntity.ok(conversationService
-                .getConversationById(conversationId, username));
+                .getConversationById(conversationId));
     }
 
     @GetMapping("/conversas")
-    public ResponseEntity<List<ConversationResponse>> getConversations(
-            @RequestParam(value = "username") String username
-    ){
-        return ResponseEntity.ok(conversationService.getConversations(username));
+    public ResponseEntity<List<ConversationResponse>> getConversations(){
+        return ResponseEntity.ok(conversationService.getConversations());
     }
 }

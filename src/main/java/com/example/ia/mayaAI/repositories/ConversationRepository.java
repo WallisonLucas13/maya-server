@@ -9,6 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface ConversationRepository extends JpaRepository<ConversationModel, UUID> {
-
     List<ConversationModel> findAllByUsername(String username);
 }

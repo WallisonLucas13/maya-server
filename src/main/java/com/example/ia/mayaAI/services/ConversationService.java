@@ -16,6 +16,7 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -37,7 +38,8 @@ public class ConversationService {
     private OpenAiChatModel aiModel;
 
     @Transactional
-    public MessageModel sendMessage(UUID conversationId, String username, MessageInput messageInput){
+    public MessageModel sendMessage(UUID conversationId, MessageInput messageInput){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
         ConversationModel conversation = findOrCreateConversation(conversationId, username);
 
         MessageModel userMessage = MessageConverter
@@ -90,7 +92,7 @@ public class ConversationService {
     }
 
     @Transactional
-    public ConversationModel getConversationById(UUID conversationId, String username){
+    public ConversationModel getConversationById(UUID conversationId){
         Optional<ConversationModel> conversation = conversationRepository
                 .findById(conversationId);
 
@@ -102,7 +104,8 @@ public class ConversationService {
     }
 
     @Transactional
-    public List<ConversationResponse> getConversations(String username){
+    public List<ConversationResponse> getConversations(){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
         List<ConversationModel> conversations = conversationRepository
                 .findAllByUsername(username);
 
