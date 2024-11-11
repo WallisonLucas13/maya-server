@@ -16,6 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.List;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -35,6 +37,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,"/api/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                .cors(cors -> cors
+                        .configurationSource(request -> {
+                            var corsConfiguration = new org.springframework.web.cors.CorsConfiguration();
+                            corsConfiguration.setAllowedOrigins(List.of("http://localhost:4200"));
+                            corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                            corsConfiguration.setAllowedHeaders(List.of("*"));
+                            return corsConfiguration;
+                        }))
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

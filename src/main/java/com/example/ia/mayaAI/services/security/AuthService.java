@@ -1,7 +1,7 @@
 package com.example.ia.mayaAI.services.security;
 
 import com.example.ia.mayaAI.exceptions.AlreadyUserRegisteredException;
-import com.example.ia.mayaAI.exceptions.InvalidCredencialsException;
+import com.example.ia.mayaAI.exceptions.InvalidCredentialsException;
 import com.example.ia.mayaAI.exceptions.NotFoundUserException;
 import com.example.ia.mayaAI.models.UserModel;
 import com.example.ia.mayaAI.repositories.UserRepository;
@@ -40,7 +40,7 @@ public class AuthService {
         if(passwordEncoder.matches(userModel.getPassword(), user.getPassword())){
             return new AuthResponse(jwtService.generateToken(user));
         }
-        throw new InvalidCredencialsException("Credenciais inválidas");
+        throw new InvalidCredentialsException("Credenciais inválidas, confira seu usuário e senha!");
     }
 
     private String encodePassword(String password){

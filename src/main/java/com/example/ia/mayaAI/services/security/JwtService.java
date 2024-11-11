@@ -4,7 +4,9 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
+import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.example.ia.mayaAI.models.UserModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -38,18 +40,14 @@ public class JwtService {
         }
     }
 
-    public String validateToken(String token) {
-        try {
-            Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
-            return JWT.require(algorithm)
-                    .withIssuer(JWT_ISSUER)
-                    .build()
-                    .verify(token)
-                    .getSubject();
+    public String validateToken(String token) throws JWTDecodeException, TokenExpiredException {
+        Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
+        return JWT.require(algorithm)
+                .withIssuer(JWT_ISSUER)
+                .build()
+                .verify(token)
+                .getSubject();
 
-        } catch (JWTVerificationException e) {
-           return null;
-        }
     }
 
     private Instant calculateExpirationDate() {

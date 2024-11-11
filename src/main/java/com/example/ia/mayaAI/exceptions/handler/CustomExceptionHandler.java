@@ -1,9 +1,8 @@
 package com.example.ia.mayaAI.exceptions.handler;
 
 import com.example.ia.mayaAI.exceptions.AlreadyUserRegisteredException;
-import com.example.ia.mayaAI.exceptions.InvalidCredencialsException;
+import com.example.ia.mayaAI.exceptions.InvalidCredentialsException;
 import com.example.ia.mayaAI.exceptions.NotFoundUserException;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,9 +19,9 @@ public class CustomExceptionHandler {
         return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(InvalidCredencialsException.class)
-    public ResponseEntity<String> handleInvalidCredencialsException(
-            InvalidCredencialsException e) {
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<String> handleInvalidCredentialsException(
+            InvalidCredentialsException e) {
 
         return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
     }
