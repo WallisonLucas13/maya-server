@@ -2,6 +2,7 @@ package com.example.ia.mayaAI.configs;
 
 import com.example.ia.mayaAI.services.security.UserSecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -28,6 +29,9 @@ public class SecurityConfig {
     @Autowired
     private SecurityFilter securityFilter;
 
+    @Value("${api.access.control.allow.origin}")
+    private String allowedOrigin;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
@@ -40,7 +44,7 @@ public class SecurityConfig {
                 .cors(cors -> cors
                         .configurationSource(request -> {
                             var corsConfiguration = new org.springframework.web.cors.CorsConfiguration();
-                            corsConfiguration.setAllowedOrigins(List.of("http://localhost:4200"));
+                            corsConfiguration.setAllowedOrigins(List.of("http://localhost:4200", this.allowedOrigin));
                             corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                             corsConfiguration.setAllowedHeaders(List.of("*"));
                             return corsConfiguration;
