@@ -35,7 +35,7 @@ public class AuthService {
     @Transactional
     public AuthResponse login(UserModel userModel){
         UserModel user = userRepository.findByUsername(userModel.getUsername())
-                .orElseThrow(() -> new NotFoundUserException("Usuário não encontrado"));
+                .orElseThrow(() -> new NotFoundUserException("Credenciais inválidas, confira seu usuário e senha!"));
 
         if(passwordEncoder.matches(userModel.getPassword(), user.getPassword())){
             return new AuthResponse(jwtService.generateToken(user));

@@ -30,6 +30,6 @@ public class CustomExceptionHandler {
     public ResponseEntity<String> handleNotFoundUserException(
             Exception e) {
 
-        return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 }

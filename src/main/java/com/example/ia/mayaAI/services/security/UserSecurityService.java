@@ -16,7 +16,7 @@ public class UserSecurityService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserModel userModel = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
+                .orElseThrow(() -> new UsernameNotFoundException("Credenciais inválidas, confira seu usuário e senha!"));
 
         return new User(userModel.getUsername(), userModel.getPassword(), userModel.getAuthorities());
     }
