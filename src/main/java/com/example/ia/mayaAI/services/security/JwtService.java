@@ -8,12 +8,14 @@ import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.example.ia.mayaAI.models.UserModel;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
 import java.util.Date;
 
+@Log4j2
 @Service
 public class JwtService {
 
@@ -47,9 +49,9 @@ public class JwtService {
 
     }
 
-    private Instant calculateExpirationDate() {
-        return Instant.from(ZonedDateTime.now(ZoneId.of("America/Sao_Paulo"))
-                .plusHours(EXPIRATION_TIME_HOURS)
-                .toLocalDateTime());
+    private Date calculateExpirationDate() {
+        ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("America/Sao_Paulo"))
+                .plusHours(EXPIRATION_TIME_HOURS);
+        return Date.from(zonedDateTime.toInstant());
     }
 }
