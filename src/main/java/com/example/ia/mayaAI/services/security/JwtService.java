@@ -11,10 +11,7 @@ import com.example.ia.mayaAI.models.UserModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.util.Date;
 
 @Service
@@ -51,7 +48,8 @@ public class JwtService {
     }
 
     private Instant calculateExpirationDate() {
-        return LocalDateTime.now().plusHours(EXPIRATION_TIME_HOURS)
-                .toInstant(ZoneOffset.of("-03:00"));
+        return Instant.from(ZonedDateTime.now(ZoneId.of("America/Sao_Paulo"))
+                .plusHours(EXPIRATION_TIME_HOURS)
+                .toLocalDateTime());
     }
 }
