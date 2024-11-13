@@ -6,6 +6,7 @@ import com.example.ia.mayaAI.utils.UuidGenerator;
 import org.springframework.ai.chat.messages.MessageType;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 public class MessageConverter {
@@ -16,7 +17,7 @@ public class MessageConverter {
                     MessageModel model = new MessageModel();
                     model.setType(MessageType.USER);
                     model.setMessage(i.getMessage());
-                    model.setCreatedAt(LocalDateTime.now());
+                    model.setCreatedAt(LocalDateTime.now().atOffset(ZoneOffset.of("-03:00")).toLocalDateTime());
                     model.setId(UuidGenerator.generate());
                     return model;
                 })
@@ -29,7 +30,7 @@ public class MessageConverter {
                     MessageModel model = new MessageModel();
                     model.setType(MessageType.SYSTEM);
                     model.setMessage(i.getMessage());
-                    model.setCreatedAt(LocalDateTime.now());
+                    model.setCreatedAt(LocalDateTime.now().atOffset(ZoneOffset.of("-03:00")).toLocalDateTime());
                     model.setId(UuidGenerator.generate());
                     return model;
                 })
