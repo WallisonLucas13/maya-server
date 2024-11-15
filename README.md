@@ -14,6 +14,7 @@ Todas as mensagens e conversas são salvas em um banco de dados MySQL. O histór
 ## Tecnologias Utilizadas
 - **Java**: A linguagem principal usada para desenvolver este projeto.
 - **Spring Boot**
+- **Spring AI**
 - **Biblioteca da OpenAI**
 - **Spring Security e JWT**
 - **Spring Data JPA**
