@@ -102,3 +102,7 @@ Todas as mensagens e conversas são salvas em um banco de dados MySQL. O histór
 
 ## Outras Funcionalidades
 A API também conta com métodos de autenticação, onde o usuário realiza o cadastro ou faz login e recebe um token JWT válido por 2 horas. Esse token deve ser passado em todas as requisições relacionadas à regra de negócio.
+
+## Deploy
+Api hospedada na Azure por meio de CI/CD.
+(https://mayaai-api.azurewebsites.net)
