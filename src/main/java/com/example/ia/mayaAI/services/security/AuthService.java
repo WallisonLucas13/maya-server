@@ -4,9 +4,10 @@ import com.example.ia.mayaAI.exceptions.AlreadyUserRegisteredException;
 import com.example.ia.mayaAI.exceptions.InvalidCredentialsException;
 import com.example.ia.mayaAI.exceptions.NotFoundUserException;
 import com.example.ia.mayaAI.models.UserModel;
-import com.example.ia.mayaAI.repositories.UserRepository;
+import com.example.ia.mayaAI.repositories.MongoRepository;
+import com.example.ia.mayaAI.repositories.impl.MongoRepositoryImpl;
 import com.example.ia.mayaAI.responses.AuthResponse;
-import jakarta.transaction.Transactional;
+import com.mongodb.client.MongoDatabase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,21 +21,25 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final MongoRepository mongoRepository;
+    private static final String FIND_BY_USERNAME = "username";
 
-    @Transactional
+    @Autowired
+    public AuthService(MongoDatabase mongoDatabase) {
+        this.mongoRepository = new MongoRepositoryImpl(mongoDatabase, "users");
+    }
+
     public AuthResponse register(UserModel userModel){
         this.userAlreadyRegistered(userModel.getUsername());
         userModel.setPassword(this.encodePassword(userModel.getPassword()));
         String token = this.jwtService.generateToken(userModel);
-        userRepository.save(userModel);
+        mongoRepository.save(userModel);
         return new AuthResponse(token);
     }
 
-    @Transactional
     public AuthResponse login(UserModel userModel){
-        UserModel user = userRepository.findByUsername(userModel.getUsername())
+        UserModel user = mongoRepository
+                .findBy(FIND_BY_USERNAME, userModel.getUsername(), UserModel.class)
                 .orElseThrow(() -> new NotFoundUserException("Credenciais inválidas, confira seu usuário e senha!"));
 
         if(passwordEncoder.matches(userModel.getPassword(), user.getPassword())){
@@ -48,7 +53,8 @@ public class AuthService {
     }
 
     private void userAlreadyRegistered(String username){
-        userRepository.findByUsername(username).ifPresent(user -> {
+        mongoRepository.findBy(FIND_BY_USERNAME, username, UserModel.class)
+                .ifPresent(user -> {
             throw new AlreadyUserRegisteredException("Cadastro não permitido, escolha outro nome de usuário!");
         });
     }

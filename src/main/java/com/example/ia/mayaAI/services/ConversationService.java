@@ -4,12 +4,12 @@ import com.example.ia.mayaAI.converters.MessageConverter;
 import com.example.ia.mayaAI.inputs.MessageInput;
 import com.example.ia.mayaAI.models.ConversationModel;
 import com.example.ia.mayaAI.models.MessageModel;
-import com.example.ia.mayaAI.repositories.ConversationRepository;
-import com.example.ia.mayaAI.repositories.MessageRepository;
+import com.example.ia.mayaAI.repositories.MongoRepository;
+import com.example.ia.mayaAI.repositories.impl.MongoRepositoryImpl;
 import com.example.ia.mayaAI.responses.ConversationResponse;
 import com.example.ia.mayaAI.responses.MessageResponse;
 import com.example.ia.mayaAI.utils.UuidGenerator;
-import jakarta.transaction.Transactional;
+import com.mongodb.client.MongoDatabase;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -28,16 +28,23 @@ import java.util.regex.Pattern;
 @Service
 public class ConversationService {
 
-    @Autowired
-    private MessageRepository messageRepository;
-
-    @Autowired
-    private ConversationRepository conversationRepository;
+    private final Map<String, MongoRepository> mongoRepositoryMap;
+    private static final String CONVERSATION_COLLECTION = "conversation";
+    private static final String MESSAGE_COLLECTION = "message";
+    private static final String FIND_BY_ID = "id";
+    private static final String FIND_BY_USERNAME = "username";
 
     @Autowired
     private OpenAiChatModel aiModel;
 
-    @Transactional
+    @Autowired
+    public ConversationService(MongoDatabase mongoDatabase) {
+        this.mongoRepositoryMap = Map.of(
+                CONVERSATION_COLLECTION, new MongoRepositoryImpl(mongoDatabase, CONVERSATION_COLLECTION),
+                MESSAGE_COLLECTION, new MongoRepositoryImpl(mongoDatabase, MESSAGE_COLLECTION)
+        );
+    }
+
     public MessageModel sendMessage(UUID conversationId, MessageInput messageInput){
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         ConversationModel conversation = findOrCreateConversation(conversationId, username);
@@ -64,23 +71,22 @@ public class ConversationService {
         return aiMessageModel;
     }
 
-    @Transactional
     public ConversationModel updateConversation(ConversationModel conversation,
                                                 MessageModel messageModel,
                                                 String username){
         if(messageModel.getType().equals(MessageType.USER)){
-            messageRepository.save(messageModel);
+            mongoRepositoryMap.get(MESSAGE_COLLECTION).save(messageModel);
             List<MessageModel> messages = conversation.getMessages();
             messages.add(messageModel);
             conversation.setMessages(messages);
             conversation.setUsername(username);
-            return conversationRepository.save(conversation);
+            return mongoRepositoryMap.get(CONVERSATION_COLLECTION).save(conversation);
         }
 
         String extractedTitle = extractTitleBlock(messageModel.getMessage());
         messageModel.setMessage(removeTitleBlock(messageModel.getMessage()));
 
-        messageRepository.save(messageModel);
+        mongoRepositoryMap.get(MESSAGE_COLLECTION).save(messageModel);
         List<MessageModel> messages = conversation.getMessages();
         messages.add(messageModel);
         conversation.setMessages(messages);
@@ -88,13 +94,12 @@ public class ConversationService {
             conversation.setTitle(extractedTitle);
         }
         conversation.setUsername(username);
-        return conversationRepository.save(conversation);
+        return mongoRepositoryMap.get(CONVERSATION_COLLECTION).save(conversation);
     }
 
-    @Transactional
     public ConversationModel getConversationById(UUID conversationId){
-        Optional<ConversationModel> conversation = conversationRepository
-                .findById(conversationId);
+        Optional<ConversationModel> conversation = mongoRepositoryMap.get("conversation")
+                .findBy(FIND_BY_ID, conversationId, ConversationModel.class);
 
         List<MessageModel> messageModels = conversation.get().getMessages();
 
@@ -103,11 +108,10 @@ public class ConversationService {
         return conversation.get();
     }
 
-    @Transactional
     public List<ConversationResponse> getConversations(){
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        List<ConversationModel> conversations = conversationRepository
-                .findAllByUsername(username);
+        List<ConversationModel> conversations = mongoRepositoryMap.get("conversation")
+                .findAllBy(FIND_BY_USERNAME, username, ConversationModel.class);
 
         List<ConversationResponse> sortedConversations = new ArrayList<>(conversations.stream()
                 .map(conversation -> {
@@ -142,26 +146,24 @@ public class ConversationService {
                 .orElse(null);
     }
 
-    @Transactional
     private ConversationModel findOrCreateConversation(UUID conversationId, String username){
         if(conversationId == null){
             return createConversation(username);
         }
 
-        Optional<ConversationModel> conversation = conversationRepository
-                .findById(conversationId);
+        Optional<ConversationModel> conversation = mongoRepositoryMap.get(CONVERSATION_COLLECTION)
+                .findBy(FIND_BY_ID, conversationId, ConversationModel.class);
 
         return conversation.get();
     }
 
-    @Transactional
     private ConversationModel createConversation(String username){
         ConversationModel newConversation = new ConversationModel();
         newConversation.setUsername(username);
         newConversation.setId(UuidGenerator.generate());
         newConversation.setMessages(List.of());
         newConversation.setCreatedAt(LocalDateTime.now());
-        return conversationRepository.save(newConversation);
+        return mongoRepositoryMap.get(CONVERSATION_COLLECTION).save(newConversation);
     }
 
     private String extractTitleBlock(String message) {
