@@ -25,13 +25,13 @@ public class ConversationController {
     @PostMapping("/mensagem")
     public ResponseEntity<MessageModel> sendMessage(
             @RequestBody MessageInput input,
-            @RequestParam(value = "conversationId", required = false) UUID conversationId){
+            @RequestParam(value = "conversationId", required = false) String conversationId){
         return ResponseEntity.ok(conversationService.sendMessage(conversationId, input));
     }
 
     @GetMapping("/conversa")
     public ResponseEntity<ConversationModel> getConversation(
-            @RequestParam(value = "conversationId", required = false) UUID conversationId
+            @RequestParam(value = "conversationId", required = false) String conversationId
     ){
         return ResponseEntity.ok(conversationService
                 .getConversationById(conversationId));

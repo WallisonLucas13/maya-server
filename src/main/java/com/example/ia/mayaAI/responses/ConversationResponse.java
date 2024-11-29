@@ -14,7 +14,7 @@ import java.util.UUID;
 @Builder
 public class ConversationResponse {
 
-    private UUID id;
+    private String id;
     private String title;
     private String username;
     private MessageResponse lastUserMessage;

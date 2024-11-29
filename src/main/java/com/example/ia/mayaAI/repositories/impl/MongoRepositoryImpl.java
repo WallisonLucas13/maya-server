@@ -1,35 +1,53 @@
 package com.example.ia.mayaAI.repositories.impl;
 
-import com.example.ia.mayaAI.configs.MongoConfig;
 import com.example.ia.mayaAI.repositories.MongoRepository;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.result.UpdateResult;
+import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
+@Log4j2
 public class MongoRepositoryImpl implements MongoRepository {
 
     private final MongoCollection<Document> collection;
-    private final ObjectMapper objectMapper;
+    private ObjectMapper objectMapper;
 
     @Autowired
     public MongoRepositoryImpl(MongoDatabase mongoDatabase, String collectionName) {
         this.collection = mongoDatabase.getCollection(collectionName);
         this.objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        objectMapper.registerModule(new JavaTimeModule());
     }
 
     @Override
     public <T> T save(T entity) {
-        collection.insertOne(Document.parse(entity.toString()));
+        Document document = objectMapper.convertValue(entity, Document.class);
+        log.info("Saving entity: {}", document);
+        if(!this.update(entity)){
+            collection.insertOne(document);
+        }
         return entity;
+    }
+
+    @Override
+    public <T> boolean update(T entity) {
+        Document document = objectMapper.convertValue(entity, Document.class);
+        UpdateResult result = collection
+                .replaceOne(Filters.eq("_id", document.get("_id")), document);
+
+        return result.getMatchedCount() > 0;
     }
 
     @Override
@@ -44,6 +62,6 @@ public class MongoRepositoryImpl implements MongoRepository {
         Bson filter = Filters.and(Filters.eq(key, value));
         return collection.find(filter)
                 .map(document -> objectMapper.convertValue(document, responseType))
-                .into(Objects.requireNonNullElseGet(List.of(), List::of));
+                .into(new ArrayList<>());
     }
 }

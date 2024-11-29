@@ -21,6 +21,15 @@ public interface MongoRepository {
     <T> T save(T entity);
 
     /**
+     * Atualiza uma entidade no MongoDB.
+     *
+     * @param entity a entidade a ser atualizada
+     * @param <T> o tipo da entidade
+     * @return a entidade atualizada
+     */
+    <T> boolean update(T entity);
+
+    /**
      * Encontra uma entidade pelo valor de uma chave específica.
      *
      * @param key a chave para a busca

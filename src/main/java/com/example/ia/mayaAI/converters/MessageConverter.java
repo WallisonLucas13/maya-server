@@ -20,7 +20,7 @@ public class MessageConverter {
                     model.setType(MessageType.USER);
                     model.setMessage(i.getMessage());
                     model.setCreatedAt(ZonedDateTime.now(ZoneId.of("America/Sao_Paulo")).toLocalDateTime());
-                    model.setId(UuidGenerator.generate());
+                    model.setId(UuidGenerator.generate().toString());
                     return model;
                 })
                 .orElse(new MessageModel());
@@ -33,7 +33,7 @@ public class MessageConverter {
                     model.setType(MessageType.SYSTEM);
                     model.setMessage(i.getMessage());
                     model.setCreatedAt(ZonedDateTime.now(ZoneId.of("America/Sao_Paulo")).toLocalDateTime());
-                    model.setId(UuidGenerator.generate());
+                    model.setId(UuidGenerator.generate().toString());
                     return model;
                 })
                 .orElse(new MessageModel());

@@ -15,7 +15,7 @@ import java.util.UUID;
 @Builder
 public class MessageResponse {
 
-    private UUID id;
+    private String id;
 
     private MessageType type;
 

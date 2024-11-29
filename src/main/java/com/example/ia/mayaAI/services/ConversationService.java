@@ -31,7 +31,7 @@ public class ConversationService {
     private final Map<String, MongoRepository> mongoRepositoryMap;
     private static final String CONVERSATION_COLLECTION = "conversation";
     private static final String MESSAGE_COLLECTION = "message";
-    private static final String FIND_BY_ID = "id";
+    private static final String FIND_BY_ID = "_id";
     private static final String FIND_BY_USERNAME = "username";
 
     @Autowired
@@ -45,7 +45,7 @@ public class ConversationService {
         );
     }
 
-    public MessageModel sendMessage(UUID conversationId, MessageInput messageInput){
+    public MessageModel sendMessage(String conversationId, MessageInput messageInput){
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         ConversationModel conversation = findOrCreateConversation(conversationId, username);
 
@@ -97,7 +97,7 @@ public class ConversationService {
         return mongoRepositoryMap.get(CONVERSATION_COLLECTION).save(conversation);
     }
 
-    public ConversationModel getConversationById(UUID conversationId){
+    public ConversationModel getConversationById(String conversationId){
         Optional<ConversationModel> conversation = mongoRepositoryMap.get("conversation")
                 .findBy(FIND_BY_ID, conversationId, ConversationModel.class);
 
@@ -140,13 +140,14 @@ public class ConversationService {
     }
 
     private MessageModel findLastUserMessage(ConversationModel conversation){
+        log.info("Finding last user message for conversation: {}", conversation.getId());
         return conversation.getMessages().stream()
                 .filter(message -> message.getType().equals(MessageType.USER))
                 .max(Comparator.comparing(MessageModel::getCreatedAt))
                 .orElse(null);
     }
 
-    private ConversationModel findOrCreateConversation(UUID conversationId, String username){
+    private ConversationModel findOrCreateConversation(String conversationId, String username){
         if(conversationId == null){
             return createConversation(username);
         }
@@ -160,8 +161,8 @@ public class ConversationService {
     private ConversationModel createConversation(String username){
         ConversationModel newConversation = new ConversationModel();
         newConversation.setUsername(username);
-        newConversation.setId(UuidGenerator.generate());
-        newConversation.setMessages(List.of());
+        newConversation.setId(UuidGenerator.generate().toString());
+        newConversation.setMessages(new ArrayList<>());
         newConversation.setCreatedAt(LocalDateTime.now());
         return mongoRepositoryMap.get(CONVERSATION_COLLECTION).save(newConversation);
     }
