@@ -5,9 +5,10 @@ import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.example.ia.mayaAI.exceptions.NotFoundUserException;
 import com.example.ia.mayaAI.models.UserModel;
-import com.example.ia.mayaAI.repositories.UserRepository;
+import com.example.ia.mayaAI.repositories.MongoRepository;
+import com.example.ia.mayaAI.repositories.impl.MongoRepositoryImpl;
 import com.example.ia.mayaAI.services.security.JwtService;
-import com.example.ia.mayaAI.services.security.AuthService;
+import com.mongodb.client.MongoDatabase;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,9 +29,13 @@ public class SecurityFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtService jwtService;
+    private final MongoRepository mongoRepository;
+    private static final String FIND_BY_USERNAME = "username";
 
     @Autowired
-    private UserRepository userRepository;
+    public SecurityFilter(MongoDatabase mongoDatabase) {
+        this.mongoRepository = new MongoRepositoryImpl(mongoDatabase, "users");
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -51,7 +56,8 @@ public class SecurityFilter extends OncePerRequestFilter {
                 return;
             }
 
-            UserModel userModel = userRepository.findByUsername(username)
+            UserModel userModel = mongoRepository
+                    .findBy(FIND_BY_USERNAME, username, UserModel.class)
                     .orElseThrow(() -> new NotFoundUserException("Usuário não encontrado"));
 
             var authentication = new UsernamePasswordAuthenticationToken(userModel, null, userModel.getAuthorities());

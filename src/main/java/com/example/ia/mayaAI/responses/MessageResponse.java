@@ -1,9 +1,5 @@
 package com.example.ia.mayaAI.responses;
 
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,13 +15,10 @@ import java.util.UUID;
 @Builder
 public class MessageResponse {
 
-    @Id
     private UUID id;
 
-    @Enumerated(EnumType.STRING)
     private MessageType type;
 
-    @Lob
     private String message;
 
     private LocalDateTime createdAt;
