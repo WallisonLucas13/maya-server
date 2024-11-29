@@ -28,9 +28,10 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SECURITY_SECRET_KEY: ${{ secrets.SECURITY_SECRET_KEY }}
           SECURITY_EXPIRATION_TIME_HOURS: ${{ secrets.SECURITY_EXPIRATION_TIME_HOURS }}
-          DB_URL: ${{ secrets.DB_URL }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          MONGO_URL: ${{ secrets.MONGO_URL }}
+          MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
+          MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+          MONGO_DB: ${{ secrets.MONGO_DB }}
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
