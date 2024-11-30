@@ -30,6 +30,16 @@ public interface MongoRepository {
     <T> boolean update(T entity);
 
     /**
+     * Atualiza um campo específico de uma entidade no MongoDB.
+     *
+     * @param key o id da entidade a ser atualizada
+     * @param field o campo a ser atualizado
+     * @param value o novo valor do campo
+     * @param <T> o tipo do valor do campo
+     */
+    <T> void update(String key, String field, T value);
+
+    /**
      * Encontra uma entidade pelo valor de uma chave específica.
      *
      * @param key a chave para a busca

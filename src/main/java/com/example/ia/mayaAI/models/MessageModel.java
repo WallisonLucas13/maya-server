@@ -16,10 +16,10 @@ import java.util.UUID;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MessageModel{
 
-    private String conversationId;
-
     @JsonProperty("_id")
     private String id;
+
+    private String conversationId;
 
     private MessageType type;
 

@@ -24,7 +24,5 @@ public class ConversationModel {
     private String username;
     private String title;
 
-    private List<MessageModel> messages;
-
     private LocalDateTime createdAt;
 }

@@ -13,6 +13,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.management.Query;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +49,13 @@ public class MongoRepositoryImpl implements MongoRepository {
                 .replaceOne(Filters.eq("_id", document.get("_id")), document);
 
         return result.getMatchedCount() > 0;
+    }
+
+    @Override
+    public <T> void update(String key, String field, T value) {
+        Document filter = new Document("_id", key);
+        Document update = new Document("$set", new Document(field, value));
+        collection.updateOne(filter, update);
     }
 
     @Override

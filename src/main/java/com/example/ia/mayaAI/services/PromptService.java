@@ -15,14 +15,14 @@ import java.util.List;
 @Log4j2
 @Service
 public class PromptService {
-    public static Prompt promptGenerateWithInstructions(ConversationModel conversationModel){
+    public static Prompt promptGenerate(List<MessageModel> messages, String username) {
         String initialInstructions = """
-                Você é uma Inteligência Artificial chamada Maya, 
-                presente em um chatbot para responder perguntas dos usuários. 
-                Vou enviar o contexto de mensagens anteriores para que você possa responder 
-                de forma mais precisa. Aqui está o username do usuário: %s. 
-                Use esse contexto para responder de forma precisa e contextual. 
-                Seja gentil, prestativa e atenta aos erros ortográficos. 
+                Você é uma Inteligência Artificial chamada Maya,
+                presente em um chatbot para responder perguntas dos usuários.
+                Vou enviar o contexto de mensagens anteriores para que você possa responder
+                de forma mais precisa. Aqui está o username do usuário: %s.
+                Use esse contexto para responder de forma precisa e contextual.
+                Seja gentil, prestativa e atenta aos erros ortográficos.
                 Responda diretamente às perguntas sem cumprimentar o usuário desnecessariamente. 
                 Suas respostas devem ser completas, claras e relevantes ao contexto. 
                 Analise o contexto das mensagens e utilize-o quando fizer sentido. 
@@ -40,14 +40,10 @@ public class PromptService {
                 No histórico da conversa, "user" significa mensagem do usuário e "system" 
                 significa sua própria resposta.               
                 """;
-        initialInstructions = String.format(initialInstructions, conversationModel.getUsername());
+        initialInstructions = String.format(initialInstructions, username);
 
-        List<MessageModel> messageModels = conversationModel.getMessages();
-        messageModels.sort(Comparator.comparing(MessageModel::getCreatedAt));
-        conversationModel.setMessages(messageModels);
-
-        String conversationContext = conversationModel
-                .getMessages().stream()
+        String conversationContext = messages
+                .stream()
                 .map(message -> message.getType() + ": " + message.getMessage())
                 .reduce("", (a, b) -> a + "\n" + b);
 

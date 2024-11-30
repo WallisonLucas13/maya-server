@@ -1,123 +1,98 @@
 package com.example.ia.mayaAI.services;
 
-import com.example.ia.mayaAI.converters.MessageConverter;
-import com.example.ia.mayaAI.inputs.MessageInput;
 import com.example.ia.mayaAI.models.ConversationModel;
 import com.example.ia.mayaAI.models.MessageModel;
 import com.example.ia.mayaAI.repositories.MongoRepository;
 import com.example.ia.mayaAI.repositories.impl.MongoRepositoryImpl;
+import com.example.ia.mayaAI.responses.ConversationPreviewResponse;
 import com.example.ia.mayaAI.responses.ConversationResponse;
 import com.example.ia.mayaAI.responses.MessageResponse;
+import com.example.ia.mayaAI.utils.TitleFormatOperations;
 import com.example.ia.mayaAI.utils.UuidGenerator;
+import com.example.ia.mayaAI.utils.ZonedDateGenerate;
 import com.mongodb.client.MongoDatabase;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.ai.chat.messages.MessageType;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Log4j2
 @Service
 public class ConversationService {
 
-    private final Map<String, MongoRepository> mongoRepositoryMap;
+    private final MongoRepository mongoRepository;
+
+    @Autowired
+    private MessageService messageService;
+
+    @Autowired
+    private AiService aiService;
     private static final String CONVERSATION_COLLECTION = "conversation";
-    private static final String MESSAGE_COLLECTION = "message";
     private static final String FIND_BY_ID = "_id";
     private static final String FIND_BY_USERNAME = "username";
+    private static final String TITLE_FIELD = "title";
 
     @Autowired
     private OpenAiChatModel aiModel;
 
     @Autowired
     public ConversationService(MongoDatabase mongoDatabase) {
-        this.mongoRepositoryMap = Map.of(
-                CONVERSATION_COLLECTION, new MongoRepositoryImpl(mongoDatabase, CONVERSATION_COLLECTION),
-                MESSAGE_COLLECTION, new MongoRepositoryImpl(mongoDatabase, MESSAGE_COLLECTION)
-        );
+        this.mongoRepository = new MongoRepositoryImpl(mongoDatabase, CONVERSATION_COLLECTION);
     }
 
-    public MessageModel sendMessage(String conversationId, MessageInput messageInput){
+    public MessageModel sendMessage(String conversationId, MessageModel messageModel){
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        ConversationModel conversation = findOrCreateConversation(conversationId, username);
+        String validConversationId = this.getValidConversationId(conversationId, username);
+        messageModel.setConversationId(validConversationId);
 
-        MessageModel userMessage = MessageConverter
-                .inputToUserMessage(messageInput);
-        userMessage.setConversationId(conversation.getId());
+        this.messageService.saveMessage(messageModel);
 
-        ConversationModel updatedConversation = updateConversation(conversation, userMessage, username);
+        MessageModel aiMessageModel = this.aiService
+                .callAI(validConversationId, this.messageService
+                        .getSortedMessages(validConversationId));
 
-        Prompt prompt = PromptService.promptGenerateWithInstructions(updatedConversation);
-        log.info("Sending prompt: {}", prompt.getContents());
+        MessageModel clearedAiMessage = this.getTitleAndClearMessage(validConversationId, aiMessageModel);
+        return this.messageService.saveMessage(clearedAiMessage);
+    }
 
-        ChatResponse aiResponse = aiModel.call(prompt);
+    private MessageModel getTitleAndClearMessage(String validConversationId,
+                                                 MessageModel aiMessageModel){
+        String title = TitleFormatOperations
+                .extractTitleBlock(aiMessageModel.getMessage());
+        this.updateConversationTitle(validConversationId, title);
 
-        log.info("Received message: {}", aiResponse.getResult().getOutput().getContent());
-        MessageModel aiMessageModel = MessageConverter
-                .inputToAiMessage(new MessageInput(aiResponse.getResult().getOutput().getContent()));
-
-        aiMessageModel.setConversationId(updatedConversation.getId());
-
-        updateConversation(conversation, aiMessageModel, username);
-
+        String clearedMessage = TitleFormatOperations
+                .clearTitleBlock(aiMessageModel.getMessage());
+        aiMessageModel.setMessage(clearedMessage);
         return aiMessageModel;
     }
 
-    public ConversationModel updateConversation(ConversationModel conversation,
-                                                MessageModel messageModel,
-                                                String username){
-        if(messageModel.getType().equals(MessageType.USER)){
-            mongoRepositoryMap.get(MESSAGE_COLLECTION).save(messageModel);
-            List<MessageModel> messages = conversation.getMessages();
-            messages.add(messageModel);
-            conversation.setMessages(messages);
-            conversation.setUsername(username);
-            return mongoRepositoryMap.get(CONVERSATION_COLLECTION).save(conversation);
-        }
+    public ConversationResponse getConversationById(String conversationId){
+        ConversationModel conversation = mongoRepository
+                .findBy(FIND_BY_ID, conversationId, ConversationModel.class)
+                .get();
 
-        String extractedTitle = extractTitleBlock(messageModel.getMessage());
-        messageModel.setMessage(removeTitleBlock(messageModel.getMessage()));
-
-        mongoRepositoryMap.get(MESSAGE_COLLECTION).save(messageModel);
-        List<MessageModel> messages = conversation.getMessages();
-        messages.add(messageModel);
-        conversation.setMessages(messages);
-        if(!extractedTitle.isBlank()) {
-            conversation.setTitle(extractedTitle);
-        }
-        conversation.setUsername(username);
-        return mongoRepositoryMap.get(CONVERSATION_COLLECTION).save(conversation);
+        return this.buildConversationResponse(
+                conversation,
+                this.messageService.getSortedMessages(conversationId)
+        );
     }
 
-    public ConversationModel getConversationById(String conversationId){
-        Optional<ConversationModel> conversation = mongoRepositoryMap.get("conversation")
-                .findBy(FIND_BY_ID, conversationId, ConversationModel.class);
-
-        List<MessageModel> messageModels = conversation.get().getMessages();
-
-        messageModels.sort(Comparator.comparing(MessageModel::getCreatedAt));
-        conversation.get().setMessages(messageModels);
-        return conversation.get();
-    }
-
-    public List<ConversationResponse> getConversations(){
+    public List<ConversationPreviewResponse> getConversationsPreview(){
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        List<ConversationModel> conversations = mongoRepositoryMap.get("conversation")
+        List<ConversationModel> conversations = mongoRepository
                 .findAllBy(FIND_BY_USERNAME, username, ConversationModel.class);
 
-        List<ConversationResponse> sortedConversations = new ArrayList<>(conversations.stream()
-                .map(conversation -> {
-                    MessageModel lastMessage = findLastUserMessage(conversation);
 
-                    return ConversationResponse.builder()
+        List<ConversationPreviewResponse> sortedConversations = new ArrayList<>(conversations.stream()
+                .map(conversation -> {
+                    MessageModel lastMessage = this.messageService
+                            .findLastUserMessage(conversation.getId());
+
+                    return ConversationPreviewResponse.builder()
                             .id(conversation.getId())
                             .username(conversation.getUsername())
                             .title(conversation.getTitle())
@@ -133,54 +108,40 @@ public class ConversationService {
                 .toList());
 
         sortedConversations
-                .sort(Comparator.comparing((ConversationResponse c) -> c.getLastUserMessage()
+                .sort(Comparator.comparing((ConversationPreviewResponse c) -> c.getLastUserMessage()
                         .getCreatedAt()).reversed());
 
         return sortedConversations;
     }
 
-    private MessageModel findLastUserMessage(ConversationModel conversation){
-        log.info("Finding last user message for conversation: {}", conversation.getId());
-        return conversation.getMessages().stream()
-                .filter(message -> message.getType().equals(MessageType.USER))
-                .max(Comparator.comparing(MessageModel::getCreatedAt))
-                .orElse(null);
+    private void updateConversationTitle(String conversationId, String title){
+        mongoRepository.update(conversationId, TITLE_FIELD, title);
     }
 
-    private ConversationModel findOrCreateConversation(String conversationId, String username){
-        if(conversationId == null){
-            return createConversation(username);
-        }
-
-        Optional<ConversationModel> conversation = mongoRepositoryMap.get(CONVERSATION_COLLECTION)
+    private String getValidConversationId(String conversationId, String username){
+        Optional<ConversationModel> conversation = mongoRepository
                 .findBy(FIND_BY_ID, conversationId, ConversationModel.class);
 
-        return conversation.get();
+        return conversation.map(ConversationModel::getId)
+                .orElseGet(() -> createConversation(username).getId());
     }
 
     private ConversationModel createConversation(String username){
         ConversationModel newConversation = new ConversationModel();
         newConversation.setUsername(username);
         newConversation.setId(UuidGenerator.generate().toString());
-        newConversation.setMessages(new ArrayList<>());
-        newConversation.setCreatedAt(LocalDateTime.now());
-        return mongoRepositoryMap.get(CONVERSATION_COLLECTION).save(newConversation);
+        newConversation.setCreatedAt(ZonedDateGenerate.generate());
+        return mongoRepository.save(newConversation);
     }
 
-    private String extractTitleBlock(String message) {
-        String regex = "<([\\s\\S]*?)>";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(message);
-
-        if (matcher.find()) {
-            return matcher.group(1).trim();
-        }
-        return "";
+    private ConversationResponse buildConversationResponse(ConversationModel conversation,
+                                                           List<MessageModel> messages){
+        return ConversationResponse.builder()
+                .id(conversation.getId())
+                .username(conversation.getUsername())
+                .title(conversation.getTitle())
+                .messages(messages)
+                .createdAt(conversation.getCreatedAt())
+                .build();
     }
-
-    private String removeTitleBlock(String message) {
-        String regex = "<([\\s\\S]*?)>|\"\"";
-        return message.replaceAll(regex, "").trim().replaceAll("[\"\\n\\r]+$", "");
-    }
-
 }
