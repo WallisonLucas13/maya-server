@@ -1,5 +1,6 @@
 package com.example.ia.mayaAI.repositories.impl;
 
+import com.example.ia.mayaAI.enums.DocumentSortDirection;
 import com.example.ia.mayaAI.repositories.MongoRepository;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -80,9 +81,16 @@ public class MongoRepositoryImpl implements MongoRepository {
     }
 
     @Override
-    public <R, T> List<T> findAllBy(String key, R value, Class<T> responseType, String sortField) {
+    public <R, T> List<T> findAllBy(String key,
+                                    R value,
+                                    Class<T> responseType,
+                                    String sortField,
+                                    DocumentSortDirection direction) {
         Bson filter = Filters.and(Filters.eq(key, value));
-        Bson sorter = Sorts.ascending(sortField);
+        Bson sorter = direction.equals(DocumentSortDirection.ASC)
+                ? Sorts.ascending(sortField)
+                : Sorts.descending(sortField);
+
         log.info("Finding all entities by key: {} and sort by field: {}", filter, sorter);
         return collection.find(filter)
                 .sort(sorter)

@@ -22,4 +22,5 @@ public class ConversationResponse {
     private List<MessageModel> messages;
 
     private Instant createdAt;
+    private Instant updatedAt;
 }

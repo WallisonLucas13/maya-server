@@ -21,4 +21,6 @@ public class ConversationModel {
     private String title;
 
     private Instant createdAt;
+
+    private Instant updatedAt;
 }

@@ -18,4 +18,6 @@ public class ConversationPreviewResponse {
     private String username;
     private MessageResponse lastUserMessage;
     private Instant createdAt;
+
+    private Instant updatedAt;
 }

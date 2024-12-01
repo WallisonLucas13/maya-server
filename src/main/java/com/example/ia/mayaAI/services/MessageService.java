@@ -1,5 +1,6 @@
 package com.example.ia.mayaAI.services;
 
+import com.example.ia.mayaAI.enums.DocumentSortDirection;
 import com.example.ia.mayaAI.models.MessageModel;
 import com.example.ia.mayaAI.repositories.MongoRepository;
 import com.example.ia.mayaAI.repositories.impl.MongoRepositoryImpl;
@@ -36,7 +37,8 @@ public class MessageService {
                         FIND_BY_CONVERSATION_ID,
                         conversationId,
                         MessageModel.class,
-                        SORTED_FIELD
+                        SORTED_FIELD,
+                        DocumentSortDirection.ASC
                 );
     }
 

@@ -1,5 +1,6 @@
 package com.example.ia.mayaAI.repositories;
 
+import com.example.ia.mayaAI.enums.DocumentSortDirection;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -74,5 +75,5 @@ public interface MongoRepository {
      * @param <T> o tipo da entidade
      * @return uma lista contendo todas as entidades encontradas
      */
-    <R, T> List<T> findAllBy(String key, R value, Class<T> responseType, String sortField);
+    <R, T> List<T> findAllBy(String key, R value, Class<T> responseType, String sortField, DocumentSortDirection direction);
 }
