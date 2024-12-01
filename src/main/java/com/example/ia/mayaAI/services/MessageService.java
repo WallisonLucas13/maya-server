@@ -2,8 +2,8 @@ package com.example.ia.mayaAI.services;
 
 import com.example.ia.mayaAI.enums.DocumentSortDirection;
 import com.example.ia.mayaAI.models.MessageModel;
-import com.example.ia.mayaAI.repositories.MongoRepository;
-import com.example.ia.mayaAI.repositories.impl.MongoRepositoryImpl;
+import com.example.ia.mayaAI.repositories.common.MongoRepository;
+import com.example.ia.mayaAI.repositories.common.impl.MongoRepositoryImpl;
 import com.mongodb.client.MongoDatabase;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.MessageType;

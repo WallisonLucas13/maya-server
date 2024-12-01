@@ -4,8 +4,8 @@ import com.example.ia.mayaAI.enums.DocumentSortDirection;
 import com.example.ia.mayaAI.exceptions.NotFoundConversationException;
 import com.example.ia.mayaAI.models.ConversationModel;
 import com.example.ia.mayaAI.models.MessageModel;
-import com.example.ia.mayaAI.repositories.MongoRepository;
-import com.example.ia.mayaAI.repositories.impl.MongoRepositoryImpl;
+import com.example.ia.mayaAI.repositories.common.MongoRepository;
+import com.example.ia.mayaAI.repositories.common.impl.MongoRepositoryImpl;
 import com.example.ia.mayaAI.responses.ConversationPreviewResponse;
 import com.example.ia.mayaAI.responses.ConversationResponse;
 import com.example.ia.mayaAI.responses.MessageResponse;
@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;

@@ -1,7 +1,7 @@
-package com.example.ia.mayaAI.repositories.impl;
+package com.example.ia.mayaAI.repositories.common.impl;
 
 import com.example.ia.mayaAI.enums.DocumentSortDirection;
-import com.example.ia.mayaAI.repositories.MongoRepository;
+import com.example.ia.mayaAI.repositories.common.MongoRepository;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

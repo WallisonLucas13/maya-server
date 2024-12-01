@@ -1,4 +1,4 @@
-package com.example.ia.mayaAI.repositories;
+package com.example.ia.mayaAI.repositories.common;
 
 import com.example.ia.mayaAI.enums.DocumentSortDirection;
 import org.springframework.stereotype.Repository;

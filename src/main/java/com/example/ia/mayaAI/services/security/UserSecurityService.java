@@ -1,8 +1,8 @@
 package com.example.ia.mayaAI.services.security;
 
 import com.example.ia.mayaAI.models.UserModel;
-import com.example.ia.mayaAI.repositories.MongoRepository;
-import com.example.ia.mayaAI.repositories.impl.MongoRepositoryImpl;
+import com.example.ia.mayaAI.repositories.common.MongoRepository;
+import com.example.ia.mayaAI.repositories.common.impl.MongoRepositoryImpl;
 import com.mongodb.client.MongoDatabase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;

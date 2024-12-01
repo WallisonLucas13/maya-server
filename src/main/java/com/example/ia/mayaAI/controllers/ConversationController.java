@@ -7,6 +7,7 @@ import com.example.ia.mayaAI.responses.ConversationPreviewResponse;
 import com.example.ia.mayaAI.responses.ConversationResponse;
 import com.example.ia.mayaAI.services.ConversationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +21,7 @@ public class ConversationController {
     private ConversationService conversationService;
 
     @PostMapping("/mensagem")
+    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<MessageModel> sendMessage(
             @RequestBody MessageInput input,
             @RequestParam(value = "conversationId", required = false, defaultValue = "") String conversationId){
@@ -29,6 +31,7 @@ public class ConversationController {
     }
 
     @GetMapping("/conversa")
+    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ConversationResponse> getConversation(
             @RequestParam(value = "conversationId", required = false) String conversationId
     ){
@@ -37,6 +40,7 @@ public class ConversationController {
     }
 
     @GetMapping("/conversas")
+    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<List<ConversationPreviewResponse>> getConversations(){
         return ResponseEntity.ok(conversationService.getConversationsPreview());
     }
