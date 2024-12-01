@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -24,5 +25,5 @@ public class ConversationModel {
     private String username;
     private String title;
 
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 }

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.*;
 import org.springframework.ai.chat.messages.MessageType;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -25,5 +26,5 @@ public class MessageModel{
 
     private String message;
 
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 }
