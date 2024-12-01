@@ -1,15 +1,10 @@
 package com.example.ia.mayaAI.services;
 
-import com.example.ia.mayaAI.models.ConversationModel;
 import com.example.ia.mayaAI.models.MessageModel;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.prompt.ChatOptions;
-import org.springframework.ai.chat.prompt.ChatOptionsBuilder;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
 import java.util.List;
 
 @Log4j2

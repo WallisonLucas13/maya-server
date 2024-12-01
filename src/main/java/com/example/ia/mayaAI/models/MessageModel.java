@@ -1,15 +1,13 @@
 package com.example.ia.mayaAI.models;
 
-import com.example.ia.mayaAI.utils.UUIDDeserializer;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.ai.chat.messages.MessageType;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor

@@ -14,7 +14,6 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.management.Query;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;

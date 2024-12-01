@@ -6,10 +6,6 @@ import com.example.ia.mayaAI.utils.UuidGenerator;
 import com.example.ia.mayaAI.utils.ZonedDateGenerate;
 import org.springframework.ai.chat.messages.MessageType;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.Optional;
 
 public class MessageConverter {

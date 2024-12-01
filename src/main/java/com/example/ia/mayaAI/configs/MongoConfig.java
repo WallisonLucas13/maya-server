@@ -1,6 +1,5 @@
 package com.example.ia.mayaAI.configs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;

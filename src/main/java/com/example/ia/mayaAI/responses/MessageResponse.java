@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 import org.springframework.ai.chat.messages.MessageType;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor

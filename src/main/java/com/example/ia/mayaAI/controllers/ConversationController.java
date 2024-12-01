@@ -2,7 +2,6 @@ package com.example.ia.mayaAI.controllers;
 
 import com.example.ia.mayaAI.converters.MessageConverter;
 import com.example.ia.mayaAI.inputs.MessageInput;
-import com.example.ia.mayaAI.models.ConversationModel;
 import com.example.ia.mayaAI.models.MessageModel;
 import com.example.ia.mayaAI.responses.ConversationPreviewResponse;
 import com.example.ia.mayaAI.responses.ConversationResponse;
