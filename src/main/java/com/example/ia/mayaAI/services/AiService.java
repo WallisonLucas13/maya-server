@@ -24,11 +24,10 @@ public class AiService {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Prompt prompt = PromptService
                 .promptGenerate(messages, username);
-        log.info("Sending prompt: {}", prompt.getContents());
 
         ChatResponse aiResponse = aiModel.call(prompt);
 
-        log.info("Received message: {}", aiResponse.getResult().getOutput().getContent());
+        log.info("Ai Response: {}", aiResponse.getResult().getOutput().getContent());
         MessageModel aiMessage = MessageConverter
                 .inputToAiMessage(new MessageInput(aiResponse.getResult().getOutput().getContent()));
         aiMessage.setConversationId(validConversationId);

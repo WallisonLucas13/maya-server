@@ -62,4 +62,17 @@ public interface MongoRepository {
      * @return uma lista contendo todas as entidades encontradas
      */
     <R, T> List<T> findAllBy(String key, R value, Class<T> responseType);
+
+    /**
+     * Encontra todas as entidades que correspondem ao valor de uma chave específica, ordenadas por um campo específico.
+     *
+     * @param key a chave para a busca
+     * @param value o valor da chave
+     * @param responseType o tipo da resposta esperada
+     * @param sortField o campo pelo qual as entidades serão ordenadas
+     * @param <R> o tipo do valor da chave
+     * @param <T> o tipo da entidade
+     * @return uma lista contendo todas as entidades encontradas
+     */
+    <R, T> List<T> findAllBy(String key, R value, Class<T> responseType, String sortField);
 }

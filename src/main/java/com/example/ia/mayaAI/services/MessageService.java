@@ -18,6 +18,8 @@ public class MessageService {
 
     private final MongoRepository mongoRepository;
     private static final String MESSAGE_COLLECTION = "message";
+    private static final String SORTED_FIELD = "createdAt";
+    private static final String FIND_BY_CONVERSATION_ID = "conversationId";
 
     @Autowired
     public MessageService(MongoDatabase mongoDatabase) {
@@ -30,14 +32,15 @@ public class MessageService {
 
     public List<MessageModel> getSortedMessages(String conversationId){
         return mongoRepository
-                .findAllBy("conversationId", conversationId, MessageModel.class)
-                .stream()
-                .sorted(Comparator.comparing(MessageModel::getCreatedAt))
-                .toList();
+                .findAllBy(
+                        FIND_BY_CONVERSATION_ID,
+                        conversationId,
+                        MessageModel.class,
+                        SORTED_FIELD
+                );
     }
 
     public MessageModel findLastUserMessage(String conversationId){
-        log.info("Finding last user message for conversation: {}", conversationId);
         return this.getSortedMessages(conversationId)
                 .stream()
                 .filter(message -> message.getType().equals(MessageType.USER))
