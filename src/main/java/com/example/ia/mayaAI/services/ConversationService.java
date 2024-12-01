@@ -1,6 +1,7 @@
 package com.example.ia.mayaAI.services;
 
 import com.example.ia.mayaAI.enums.DocumentSortDirection;
+import com.example.ia.mayaAI.exceptions.NotFoundConversationException;
 import com.example.ia.mayaAI.models.ConversationModel;
 import com.example.ia.mayaAI.models.MessageModel;
 import com.example.ia.mayaAI.repositories.MongoRepository;
@@ -79,7 +80,7 @@ public class ConversationService {
     public ConversationResponse getConversationById(String conversationId){
         ConversationModel conversation = mongoRepository
                 .findBy(FIND_BY_ID, conversationId, ConversationModel.class)
-                .get();
+                .orElseThrow(() -> new NotFoundConversationException("Conversa não encontrada!"));
 
         return this.buildConversationResponse(
                 conversation,

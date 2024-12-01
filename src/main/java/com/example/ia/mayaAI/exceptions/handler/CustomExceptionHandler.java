@@ -2,6 +2,7 @@ package com.example.ia.mayaAI.exceptions.handler;
 
 import com.example.ia.mayaAI.exceptions.AlreadyUserRegisteredException;
 import com.example.ia.mayaAI.exceptions.InvalidCredentialsException;
+import com.example.ia.mayaAI.exceptions.NotFoundConversationException;
 import com.example.ia.mayaAI.exceptions.NotFoundUserException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,13 @@ public class CustomExceptionHandler {
             AlreadyUserRegisteredException e) {
 
         return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(NotFoundConversationException.class)
+    public ResponseEntity<String> handleNotFoundConversationException(
+            NotFoundConversationException e) {
+
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
