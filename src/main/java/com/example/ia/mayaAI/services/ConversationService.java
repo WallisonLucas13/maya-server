@@ -18,6 +18,7 @@ import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.Comparator;
 import java.util.List;
@@ -63,19 +64,6 @@ public class ConversationService {
         MessageModel clearedAiMessage = this.getTitleAndClearMessage(validConversationId, aiMessageModel);
         return this.messageService.saveMessage(clearedAiMessage);
     }
-
-    private MessageModel getTitleAndClearMessage(String validConversationId,
-                                                 MessageModel aiMessageModel){
-        String title = TitleFormatOperations
-                .extractTitleBlock(aiMessageModel.getMessage());
-        this.updateConversationTitle(validConversationId, title);
-
-        String clearedMessage = TitleFormatOperations
-                .clearTitleBlock(aiMessageModel.getMessage());
-        aiMessageModel.setMessage(clearedMessage);
-        return aiMessageModel;
-    }
-
     public ConversationResponse getConversationById(String conversationId){
         ConversationModel conversation = mongoRepository
                 .findBy(FIND_BY_ID, conversationId, ConversationModel.class)
@@ -104,6 +92,21 @@ public class ConversationService {
                     return this.buildConversationPreviewResponse(conversation, lastMessage);
                 }).sorted(Comparator.comparing(ConversationPreviewResponse::getUpdatedAt).reversed())
                 .toList();
+    }
+
+    private MessageModel getTitleAndClearMessage(String validConversationId,
+                                                 MessageModel aiMessageModel){
+        String title = TitleFormatOperations
+                .extractTitleBlock(aiMessageModel.getMessage());
+
+        if(!title.isBlank()){
+            this.updateConversationTitle(validConversationId, title);
+        }
+
+        String clearedMessage = TitleFormatOperations
+                .clearTitleBlock(aiMessageModel.getMessage());
+        aiMessageModel.setMessage(clearedMessage);
+        return aiMessageModel;
     }
 
     private void updateConversationTitle(String conversationId, String title){
