@@ -69,10 +69,8 @@ public class InsightService {
                 ).map(AggregationOperation::toDocument)
                 .toList();
 
-        log.info("Pipeline: {}", pipeline);
         return collectionMap.get(MESSAGE_COLLECTION).aggregate(pipeline)
                 .map(document -> {
-                    log.info("Document: {}", document);
                     return objectMapper.convertValue(document, TotalMessagesOutput.class);
                 })
                 .map(InsightsConverter::convertToTotalMessagesResponse)
