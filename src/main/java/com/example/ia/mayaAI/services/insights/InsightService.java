@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -55,16 +56,23 @@ public class InsightService {
                 "day", new Document("$dayOfMonth", commonOperationsValue)
         );
 
+        LinkedHashMap<String, Long> fieldsSortMap = new LinkedHashMap<>();
+        fieldsSortMap.put("_id.year", 1L);
+        fieldsSortMap.put("_id.month", 1L);
+        fieldsSortMap.put("_id.day", 1L);
+
         var pipeline = Stream.of(
                         new MatchOperationStrategy("type", MessageType.USER),
                         new AddFieldsOperationStrategy(commonOperationsField),
                         new GroupOperationStrategy(fieldsGroupMap, "totalMessages", "$sum"),
-                        new SortOperationStrategy(commonOperationsField, -1L)
+                        new SortOperationStrategy(fieldsSortMap)
                 ).map(AggregationOperation::toDocument)
                 .toList();
 
+        log.info("Pipeline: {}", pipeline);
         return collectionMap.get(MESSAGE_COLLECTION).aggregate(pipeline)
                 .map(document -> {
+                    log.info("Document: {}", document);
                     return objectMapper.convertValue(document, TotalMessagesOutput.class);
                 })
                 .map(InsightsConverter::convertToTotalMessagesResponse)

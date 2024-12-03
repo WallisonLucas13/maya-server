@@ -3,17 +3,18 @@ package com.example.ia.mayaAI.repositories.aggregations.impl;
 import com.example.ia.mayaAI.repositories.aggregations.AggregationOperation;
 import org.bson.Document;
 
-public class SortOperationStrategy implements AggregationOperation {
-    private final String field;
-    private final Long order;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-    public SortOperationStrategy(String field, Long order) {
-        this.field = field;
-        this.order = order;
+public class SortOperationStrategy implements AggregationOperation {
+    private final LinkedHashMap<String, Long> sortDetailsMap;
+
+    public SortOperationStrategy(LinkedHashMap<String, Long> sortDetailsMap) {
+        this.sortDetailsMap = sortDetailsMap;
     }
 
     @Override
     public Document toDocument() {
-        return new Document("$sort", new Document(field, order));
+        return new Document("$sort", new Document(sortDetailsMap));
     }
 }
