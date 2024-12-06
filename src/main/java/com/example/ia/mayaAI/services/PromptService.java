@@ -34,6 +34,7 @@ public class PromptService {
                  - resumir os assuntos mais relevantes tratados na conversa
                  - Nunca conter trechos de código, elementos técnicos ou linguagens específicas
                  - Focar em palavras simples e descritivas relacionadas ao contexto da conversa.
+                 - Precisa ser descritivo para que qualquer pessoa possa entender os temas da conversa
                 O título é extremamente importante e deve estar entre <>, formatado 
                 exatamente da seguinte forma: <titulo da conversa>, no fim da resposta, sem pular linha. 
                 No histórico da conversa, "user" significa mensagem do usuário e "system" 
