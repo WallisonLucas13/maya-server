@@ -29,8 +29,12 @@ public class PromptService {
                 com uma saudação adequada antes de continuar com a resposta
                 Evite repetições desnecessárias ou informações redundantes nas respostas. 
                 Além de responder ao usuário, sempre gere um título para o cabeçalho da conversa. 
-                Este título deve ter no máximo 7 palavras e resumir os assuntos mais relevantes 
-                tratados na conversa. O título é extremamente importante e deve estar entre <>, formatado 
+                Este título deve:
+                 - ter no máximo 7 palavras
+                 - resumir os assuntos mais relevantes tratados na conversa
+                 - Nunca conter trechos de código, elementos técnicos ou linguagens específicas
+                 - Focar em palavras simples e descritivas relacionadas ao contexto da conversa.
+                O título é extremamente importante e deve estar entre <>, formatado 
                 exatamente da seguinte forma: <titulo da conversa>, no fim da resposta, sem pular linha. 
                 No histórico da conversa, "user" significa mensagem do usuário e "system" 
                 significa sua própria resposta.               
