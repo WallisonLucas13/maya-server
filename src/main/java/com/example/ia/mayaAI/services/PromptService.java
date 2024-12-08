@@ -29,7 +29,7 @@ public class PromptService {
                 com uma saudação adequada antes de continuar com a resposta
                 Evite repetições desnecessárias ou informações redundantes nas respostas. 
                 Além de responder ao usuário, sempre gere um título para o cabeçalho da conversa. 
-                Este título deve:
+                Este título DEVE SEMPRE ATENDER TODOS OS REQUISITOS ABAIXO:
                  - ter no máximo 8 palavras
                  - resumir os assuntos mais relevantes tratados na conversa
                  - NUNCA, em hipótese alguma, conter trechos de código, elementos técnicos ou linguagens específicas
