@@ -9,6 +9,7 @@ import com.example.ia.mayaAI.repositories.common.impl.MongoRepositoryImpl;
 import com.example.ia.mayaAI.responses.ConversationPreviewResponse;
 import com.example.ia.mayaAI.responses.ConversationResponse;
 import com.example.ia.mayaAI.responses.MessageResponse;
+import com.example.ia.mayaAI.utils.LinkExtractor;
 import com.example.ia.mayaAI.utils.TitleFormatOperations;
 import com.example.ia.mayaAI.utils.UuidGenerator;
 import com.example.ia.mayaAI.utils.ZonedDateGenerate;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,6 +37,10 @@ public class ConversationService {
 
     @Autowired
     private AiService aiService;
+
+    @Autowired
+    private LinkFetchService linkFetchService;
+
     private static final String CONVERSATION_COLLECTION = "conversation";
     private static final String FIND_BY_ID = "_id";
     private static final String FIND_BY_USERNAME = "username";
@@ -56,12 +62,9 @@ public class ConversationService {
         messageModel.setConversationId(validConversationId);
 
         this.messageService.saveMessage(messageModel);
+        MessageModel aiResponse = sendMessageToAI(messageModel, validConversationId);
 
-        MessageModel aiMessageModel = this.aiService
-                .callAI(validConversationId, this.messageService
-                        .getSortedMessages(validConversationId));
-
-        MessageModel clearedAiMessage = this.getTitleAndClearMessage(validConversationId, aiMessageModel);
+        MessageModel clearedAiMessage = this.getTitleAndClearMessage(validConversationId, aiResponse);
         return this.messageService.saveMessage(clearedAiMessage);
     }
     public ConversationResponse getConversationById(String conversationId){
@@ -159,5 +162,31 @@ public class ConversationService {
                 .createdAt(conversation.getCreatedAt())
                 .updatedAt(conversation.getUpdatedAt())
                 .build();
+    }
+
+    private MessageModel sendMessageToAI(MessageModel messageModel, String validConversationId){
+        var extractedLinks = LinkExtractor.extractLinks(messageModel.getMessage());
+
+        if(!extractedLinks.isEmpty()){
+            return this.aiService
+                    .callAIWithLinks(
+                            validConversationId, this.messageService
+                            .getSortedMessages(validConversationId),
+                            this.getLinksContextResume(extractedLinks)
+                    );
+        }
+
+        return this.aiService
+                .callAICommon(validConversationId, this.messageService
+                        .getSortedMessages(validConversationId));
+    }
+
+    private String getLinksContextResume(List<String> links){
+        LinkedHashMap<String, String> linksContextMap = new LinkedHashMap<>();
+        links.forEach(link -> {
+            linksContextMap.put(link, this.linkFetchService.fetchContent(link));
+        });
+
+        return  aiService.callHtmlInterpreter(linksContextMap);
     }
 }
