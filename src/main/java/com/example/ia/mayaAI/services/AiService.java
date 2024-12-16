@@ -31,8 +31,27 @@ public class AiService {
 
         ChatResponse aiResponse = aiModel.call(prompt);
 
-        log.info("Prompt: {}", prompt.getContents());
-        log.info("Ai Response: {}", aiResponse.getResult().getOutput().getContent());
+        log.info("MayaAI response: {}", aiResponse.getResult().getOutput().getContent());
+        MessageModel aiMessage = MessageConverter
+                .inputToAiMessage(new MessageInput(aiResponse.getResult().getOutput().getContent()));
+        aiMessage.setConversationId(validConversationId);
+
+        return aiMessage;
+    }
+
+    public MessageModel callAIWithFiles(
+            String validConversationId,
+            List<MessageModel> messages,
+            String filesContextResume
+    ){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Prompt prompt = this.promptService
+                .promptWithFilesContextGenerate(messages, username, filesContextResume);
+
+        log.info("Prompt: {}", prompt);
+        ChatResponse aiResponse = aiModel.call(prompt);
+
+        log.info("MayaAI response: {}", aiResponse.getResult().getOutput().getContent());
         MessageModel aiMessage = MessageConverter
                 .inputToAiMessage(new MessageInput(aiResponse.getResult().getOutput().getContent()));
         aiMessage.setConversationId(validConversationId);
@@ -51,21 +70,11 @@ public class AiService {
 
         ChatResponse aiResponse = aiModel.call(prompt);
 
-        log.info("Prompt: {}", prompt.getContents());
-        log.info("Ai Response: {}", aiResponse.getResult().getOutput().getContent());
+        log.info("MayaAI with links response: {}", aiResponse.getResult().getOutput().getContent());
         MessageModel aiMessage = MessageConverter
                 .inputToAiMessage(new MessageInput(aiResponse.getResult().getOutput().getContent()));
         aiMessage.setConversationId(validConversationId);
 
         return aiMessage;
-    }
-
-    public String callHtmlInterpreter(LinkedHashMap<String, String> linksContextMap){
-        Prompt prompt = this.promptService.promptHtmlInterpreterGenerate(linksContextMap);
-        ChatResponse aiResponse = aiModel.call(prompt);
-
-        log.info("Prompt: {}", prompt.getContents());
-        log.info("Ai Response: {}", aiResponse.getResult().getOutput().getContent());
-        return aiResponse.getResult().getOutput().getContent();
     }
 }

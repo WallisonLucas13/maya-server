@@ -33,6 +33,27 @@ public class PromptService {
         return new Prompt(fullContext);
     }
 
+    public Prompt promptWithFilesContextGenerate(
+            List<MessageModel> messages,
+            String username,
+            String filesContextResume
+    ) {
+        String initialInstructions = String
+                .format(
+                        this.loadPrompt("maya-common"),
+                        username,
+                        this.promptToContextByFiles(filesContextResume)
+                );
+
+        String conversationContext = messages
+                .stream()
+                .map(message -> message.getType() + ": " + message.getMessage())
+                .reduce("", (a, b) -> a + "\n" + b);
+
+        String fullContext = String.format("%s%s", initialInstructions, conversationContext);
+        return new Prompt(fullContext);
+    }
+
     public Prompt promptWithLinksGenerate(
             List<MessageModel> messages,
             String username,
@@ -54,17 +75,19 @@ public class PromptService {
         return new Prompt(fullContext);
     }
 
-    public Prompt promptHtmlInterpreterGenerate(LinkedHashMap<String, String> linksContextMap){
-        String html = linksContextMap
-                .entrySet()
-                .stream()
-                .map(entry ->
-                        "[LINK]: " + entry.getKey() + "\n[HTML CONTENT]:\n" + entry.getValue() + "\n[FIM]"
-                )
-                .reduce("", (a, b) -> a + "\n" + b);
-
-        String interpreter = String.format(this.loadPrompt("html-interpreter"), html);
-        return new Prompt(interpreter);
+    private String promptToContextByFiles(String filesContextResume) {
+        String prompt =
+                """
+                \nO usuário também tem opção de anexar arquivos em suas perguntas,
+                 Nesse caso, o sistema esta preparado para fazer o embedding do conteúdo dos arquivos,
+                 portanto, sempre que o usuário enviar arquivos,
+                 o conteúdo dos arquivos será exibido logo abaixo.
+                 Você deve responder o usuário da melhor forma possível
+                 com base no conteúdo dos arquivos e no contexto da conversa.
+                 [CONTEÚDO DOS ARQUIVOS]\n
+                 %s
+                """;
+        return String.format(prompt, filesContextResume);
     }
 
     private String promptToContextByLinks(String linksContextResume) {

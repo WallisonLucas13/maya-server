@@ -15,12 +15,15 @@ import com.example.ia.mayaAI.utils.UuidGenerator;
 import com.example.ia.mayaAI.utils.ZonedDateGenerate;
 import com.mongodb.client.MongoDatabase;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.*;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,6 +43,9 @@ public class ConversationService {
 
     @Autowired
     private LinkFetchService linkFetchService;
+
+    @Autowired
+    private IndexService indexService;
 
     private static final String CONVERSATION_COLLECTION = "conversation";
     private static final String FIND_BY_ID = "_id";
@@ -62,11 +68,34 @@ public class ConversationService {
         messageModel.setConversationId(validConversationId);
 
         this.messageService.saveMessage(messageModel);
-        MessageModel aiResponse = sendMessageToAI(messageModel, validConversationId);
+        MessageModel aiResponse = sendMessageToAI(messageModel, validConversationId, "");
 
         MessageModel clearedAiMessage = this.getTitleAndClearMessage(validConversationId, aiResponse);
         return this.messageService.saveMessage(clearedAiMessage);
     }
+
+    public MessageModel sendMessageWithFile(String conversationId,
+                                            MessageModel messageModel,
+                                            List<MultipartFile> files){
+
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        String searchResults = indexService.indexAndSearchPdfFile(files, messageModel.getMessage());
+
+        String validConversationId = this.getValidConversationId(conversationId, username);
+        messageModel.setConversationId(validConversationId);
+
+        this.messageService.saveMessage(messageModel);
+
+        MessageModel aiResponse = sendMessageToAI(
+                messageModel,
+                validConversationId,
+                searchResults
+        );
+
+        MessageModel clearedAiMessage = this.getTitleAndClearMessage(validConversationId, aiResponse);
+        return this.messageService.saveMessage(clearedAiMessage);
+    }
+
     public ConversationResponse getConversationById(String conversationId){
         ConversationModel conversation = mongoRepository
                 .findBy(FIND_BY_ID, conversationId, ConversationModel.class)
@@ -164,15 +193,28 @@ public class ConversationService {
                 .build();
     }
 
-    private MessageModel sendMessageToAI(MessageModel messageModel, String validConversationId){
+    private MessageModel sendMessageToAI(
+            MessageModel messageModel,
+            String validConversationId,
+            String filesContext
+    ){
         var extractedLinks = LinkExtractor.extractLinks(messageModel.getMessage());
+
+        if(!filesContext.isBlank()){
+            return this.aiService
+                    .callAIWithFiles(
+                            validConversationId, this.messageService
+                            .getSortedMessages(validConversationId),
+                            filesContext
+                    );
+        }
 
         if(!extractedLinks.isEmpty()){
             return this.aiService
                     .callAIWithLinks(
                             validConversationId, this.messageService
                             .getSortedMessages(validConversationId),
-                            this.getLinksContextResume(extractedLinks)
+                            this.getLinksContextResume(extractedLinks, messageModel.getMessage())
                     );
         }
 
@@ -181,12 +223,11 @@ public class ConversationService {
                         .getSortedMessages(validConversationId));
     }
 
-    private String getLinksContextResume(List<String> links){
-        LinkedHashMap<String, String> linksContextMap = new LinkedHashMap<>();
-        links.forEach(link -> {
-            linksContextMap.put(link, this.linkFetchService.fetchContent(link));
-        });
+    private String getLinksContextResume(List<String> links, String messageSearch){
+        var contentsLinks = links.stream().map(link -> {
+            return this.linkFetchService.fetchContent(link);
+        }).toList();
 
-        return  aiService.callHtmlInterpreter(linksContextMap);
+        return indexService.indexAndSearchWebPage(contentsLinks, messageSearch);
     }
 }

@@ -27,23 +27,3 @@ prompts:
     exatamente da seguinte forma: <titulo da conversa>, no fim da resposta, sem pular linha.
     No histórico da conversa, "user" significa mensagem do usuário e "system"
     significa sua própria resposta. %s
-  html-interpreter: |
-    Você é uma IA especializada em extrair informações importantes de páginas da web. Vou fornecer uma lista de conteúdos HTML de diferentes páginas. Sua tarefa é:
-    1. Para cada HTML:
-    - Identificar o título principal (se disponível).
-    - Listar os subtítulos ou seções relevantes (se disponíveis).
-    - Resumir o texto principal em até 400 palavras, ignorando menus, rodapés e conteúdo irrelevante.
-    - Produzir um resumo completo e organizado.
-
-    2. Estruturar a resposta no seguinte formato:
-    Para cada página, utilize:
-    - Link: ... (URL da página)
-    - **Título principal**: [Título identificado]
-    - **Subtítulos ou seções**:
-                     - [Subtítulo 1]
-                     - [Subtítulo 2]
-    - **Resumo do conteúdo**:
-                 [Resumo curto do texto principal.]
-
-    Aqui está a lista de HTMLs:
-    %s

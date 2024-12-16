@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -28,6 +29,18 @@ public class ConversationController {
 
         MessageModel messageModel = MessageConverter.inputToUserMessage(input);
         return ResponseEntity.ok(conversationService.sendMessage(conversationId, messageModel));
+    }
+
+    @PostMapping("/files/mensagem")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<MessageModel> sendMessageWithFile(
+            @RequestParam("files") List<MultipartFile> files,
+            @RequestParam("input") MessageInput input,
+            @RequestParam(value = "conversationId", required = false, defaultValue = "") String conversationId){
+
+        MessageModel messageModel = MessageConverter.inputToUserMessage(input);
+        return ResponseEntity.ok(conversationService
+                .sendMessageWithFile(conversationId, messageModel, files));
     }
 
     @GetMapping("/conversa")
