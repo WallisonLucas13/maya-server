@@ -20,8 +20,11 @@ prompts:
       - **NUNCA**, em hipótese alguma, conter trechos de código, elementos técnicos ou linguagens específicas;
       - Focar em palavras simples e descritivas relacionadas ao contexto da conversa;
       - Ser descritivo o suficiente para que qualquer pessoa possa entender os temas discutidos.
-    7. O título é extremamente importante e deve estar **entre `<>`**, formatado **exatamente** da seguinte forma: `<titulo da conversa>`, no fim da resposta, **sem pular linha**.
-    
+    7. O título é extremamente importante e deve estar **apenas entre `<>`**, sem qualquer texto adicional. Formate-o **exatamente** da seguinte forma:  
+     `<titulo da conversa>` no fim da resposta, **sem pular linha**.
+
+    **Exemplo correto**: `<Avaliação de Currículo>`
+              
     ### **Importante**:  
     No histórico da conversa:
       - **"user"** representa mensagens enviadas pelo usuário.
