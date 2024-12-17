@@ -1,6 +1,7 @@
 package com.example.ia.mayaAI.services;
 
 import com.example.ia.mayaAI.models.MessageModel;
+import com.example.ia.mayaAI.models.UserModel;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,88 +21,77 @@ public class PromptService {
     @Value("classpath:prompts.yml")
     private Resource promptsResource;
 
-    public Prompt promptGenerate(List<MessageModel> messages, String username) {
-        String initialInstructions = String
-                .format(this.loadPrompt("maya-common"), username, "");
-
-        String conversationContext = messages
-                .stream()
-                .map(message -> message.getType() + ": " + message.getMessage())
-                .reduce("", (a, b) -> a + "\n" + b);
-
-        String fullContext = String.format("%s%s", initialInstructions, conversationContext);
-        return new Prompt(fullContext);
-    }
-
-    public Prompt promptWithFilesContextGenerate(
-            List<MessageModel> messages,
+    public Prompt promptGenerate(
             String username,
-            String filesContextResume
-    ) {
-        String initialInstructions = String
-                .format(
-                        this.loadPrompt("maya-common"),
-                        username,
-                        this.promptToContextByFiles(filesContextResume)
-                );
-
-        String conversationContext = messages
-                .stream()
-                .map(message -> message.getType() + ": " + message.getMessage())
-                .reduce("", (a, b) -> a + "\n" + b);
-
-        String fullContext = String.format("%s%s", initialInstructions, conversationContext);
-        return new Prompt(fullContext);
-    }
-
-    public Prompt promptWithLinksGenerate(
+            MessageModel userMessage,
             List<MessageModel> messages,
-            String username,
+            String filesContextResume,
             String linksContextResume
     ) {
-        String initialInstructions = String
-                .format(
-                        this.loadPrompt("maya-common"),
-                        username,
-                        this.promptToContextByLinks(linksContextResume)
-                );
 
-        String conversationContext = messages
-                .stream()
-                .map(message -> message.getType() + ":\n" + message.getMessage())
-                .reduce("", (a, b) -> a + "\n" + b);
+        String basePrompt = String
+                .format(this.loadPrompt("maya-common"), username);
 
-        String fullContext = String.format("%s%s", initialInstructions, conversationContext);
-        return new Prompt(fullContext);
+        String fullPrompt = "\n" +
+                basePrompt +
+                this.buildNewUserMessageContextToPrompt(userMessage) +
+                (messages.isEmpty()
+                        ? ""
+                        : this.buildMessagesContextToPrompt(messages)) +
+                (filesContextResume.isBlank()
+                        ? ""
+                        : this.buildFilesContextToPrompt(filesContextResume)) +
+                (linksContextResume.isBlank()
+                        ? ""
+                        : this.buildLinksContextToPrompt(linksContextResume));
+
+        return new Prompt(fullPrompt);
     }
 
-    private String promptToContextByFiles(String filesContextResume) {
-        String prompt =
+    private String buildNewUserMessageContextToPrompt(MessageModel messageModel) {
+        return String
+                .format("\n\n[NOVA MENSAGEM DO USUÁRIO]\nUSER: %s", messageModel.getMessage());
+    }
+
+    private String buildMessagesContextToPrompt(List<MessageModel> messages) {
+        String conversationContext = messages
+                .stream()
+                .map(message -> message.getType() + ": " + message.getMessage())
+                .reduce("", (a, b) -> a + "\n" + b);
+
+        return String.format("\n\n[HISTÓRICO DE MENSAGENS]%s", conversationContext);
+    }
+
+    private String buildFilesContextToPrompt(String filesContextResume) {
+        String prompt = "\n\n" +
                 """
-                \nO usuário também tem opção de anexar arquivos em suas perguntas,
-                 Nesse caso, o sistema esta preparado para fazer o embedding do conteúdo dos arquivos,
-                 portanto, sempre que o usuário enviar arquivos,
-                 o conteúdo dos arquivos será exibido logo abaixo.
-                 Você deve responder o usuário da melhor forma possível
-                 com base no conteúdo dos arquivos e no contexto da conversa.
-                 [CONTEÚDO DOS ARQUIVOS]\n
-                 %s
+                [PROMPT DE ARQUIVOS]
+                O usuário também tem opção de anexar arquivos em suas perguntas,
+                Nesse caso, o sistema esta preparado para fazer o embedding do conteúdo dos arquivos,
+                portanto, sempre que o usuário enviar arquivos,
+                o conteúdo dos arquivos será exibido logo abaixo.
+                Você deve responder o usuário da melhor forma possível
+                com base no conteúdo dos arquivos e no contexto da conversa.
+                
+                [CONTEÚDO DOS ARQUIVOS]
+                %s
                 """;
         return String.format(prompt, filesContextResume);
     }
 
-    private String promptToContextByLinks(String linksContextResume) {
-        String prompt = """
-                \nAlém desse contexto da conversa, sempre que o usuário envolver links em suas perguntas,
-                    vou colocar logo abaixo o conteúdo de cada link para que você
-                    consiga ler e responder o usuário de forma mais precisa, portanto não precisa se preocupar
-                    em buscar páginas na internet para responder o usuário em relação a links.
-                    Sempre que lhe for solicitado algum trabalho na web em relação a links,
-                    evite dizer que você não pode fazer isso, pois estou te dando o contexto.
-                    Caso o conteúdo da página seja algum tipo de erro como 404 etc...
-                    Apenas ignore sem reclamar pro usuário.
-                    Segue abaixo o conteúdo dos links que o usuário enviou:
-                    %s
+    private String buildLinksContextToPrompt(String linksContextResume) {
+        String prompt = "\n\n" +
+                """
+                [PROMPT DE LINKS]
+                O usuário também tem opção de inserir links em suas perguntas,
+                Nesse caso, o sistema esta preparado para fazer o embedding do conteúdo dos links,
+                portanto, sempre que o usuário enviar links na pergunta,
+                o conteúdo dos links será exibido logo abaixo.
+                Você deve responder o usuário da melhor forma possível
+                com base no conteúdo dos links e no contexto da conversa.
+                
+                [CONTEÚDO DOS LINKS]
+                %s
                 """;
         return String.format(prompt, linksContextResume);
     }

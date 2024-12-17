@@ -67,10 +67,11 @@ public class ConversationService {
         String validConversationId = this.getValidConversationId(conversationId, username);
         messageModel.setConversationId(validConversationId);
 
-        this.messageService.saveMessage(messageModel);
         MessageModel aiResponse = sendMessageToAI(messageModel, validConversationId, "");
 
         MessageModel clearedAiMessage = this.getTitleAndClearMessage(validConversationId, aiResponse);
+
+        this.messageService.saveMessage(messageModel);
         return this.messageService.saveMessage(clearedAiMessage);
     }
 
@@ -84,8 +85,6 @@ public class ConversationService {
         String validConversationId = this.getValidConversationId(conversationId, username);
         messageModel.setConversationId(validConversationId);
 
-        this.messageService.saveMessage(messageModel);
-
         MessageModel aiResponse = sendMessageToAI(
                 messageModel,
                 validConversationId,
@@ -93,6 +92,8 @@ public class ConversationService {
         );
 
         MessageModel clearedAiMessage = this.getTitleAndClearMessage(validConversationId, aiResponse);
+
+        this.messageService.saveMessage(messageModel);
         return this.messageService.saveMessage(clearedAiMessage);
     }
 
@@ -196,31 +197,18 @@ public class ConversationService {
     private MessageModel sendMessageToAI(
             MessageModel messageModel,
             String validConversationId,
-            String filesContext
+            String filesContextResume
     ){
         var extractedLinks = LinkExtractor.extractLinks(messageModel.getMessage());
 
-        if(!filesContext.isBlank()){
-            return this.aiService
-                    .callAIWithFiles(
-                            validConversationId, this.messageService
-                            .getSortedMessages(validConversationId),
-                            filesContext
-                    );
-        }
-
-        if(!extractedLinks.isEmpty()){
-            return this.aiService
-                    .callAIWithLinks(
-                            validConversationId, this.messageService
-                            .getSortedMessages(validConversationId),
-                            this.getLinksContextResume(extractedLinks, messageModel.getMessage())
-                    );
-        }
-
         return this.aiService
-                .callAICommon(validConversationId, this.messageService
-                        .getSortedMessages(validConversationId));
+                .callAI(
+                        messageModel,
+                        validConversationId,
+                        this.messageService.getSortedMessages(validConversationId),
+                        filesContextResume,
+                        extractedLinks.isEmpty() ? "" : this.getLinksContextResume(extractedLinks, messageModel.getMessage())
+                );
     }
 
     private String getLinksContextResume(List<String> links, String messageSearch){

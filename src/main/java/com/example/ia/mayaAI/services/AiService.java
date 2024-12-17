@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 
 @Slf4j
@@ -24,53 +23,26 @@ public class AiService {
     @Autowired
     private PromptService promptService;
 
-    public MessageModel callAICommon(String validConversationId, List<MessageModel> messages){
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        Prompt prompt = this.promptService
-                .promptGenerate(messages, username);
-
-        ChatResponse aiResponse = aiModel.call(prompt);
-
-        log.info("MayaAI response: {}", aiResponse.getResult().getOutput().getContent());
-        MessageModel aiMessage = MessageConverter
-                .inputToAiMessage(new MessageInput(aiResponse.getResult().getOutput().getContent()));
-        aiMessage.setConversationId(validConversationId);
-
-        return aiMessage;
-    }
-
-    public MessageModel callAIWithFiles(
+    public MessageModel callAI(
+            MessageModel userMessage,
             String validConversationId,
-            List<MessageModel> messages,
-            String filesContextResume
-    ){
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        Prompt prompt = this.promptService
-                .promptWithFilesContextGenerate(messages, username, filesContextResume);
-
-        log.info("Prompt: {}", prompt);
-        ChatResponse aiResponse = aiModel.call(prompt);
-
-        log.info("MayaAI response: {}", aiResponse.getResult().getOutput().getContent());
-        MessageModel aiMessage = MessageConverter
-                .inputToAiMessage(new MessageInput(aiResponse.getResult().getOutput().getContent()));
-        aiMessage.setConversationId(validConversationId);
-
-        return aiMessage;
-    }
-
-    public MessageModel callAIWithLinks(
-            String validConversationId,
-            List<MessageModel> messages,
+            List<MessageModel> messagesContext,
+            String filesContextResume,
             String linksContextResume
     ){
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Prompt prompt = this.promptService
-                .promptWithLinksGenerate(messages, username, linksContextResume);
+                .promptGenerate(
+                        username,
+                        userMessage,
+                        messagesContext,
+                        filesContextResume,
+                        linksContextResume
+                );
 
+        log.info(prompt.getContents());
         ChatResponse aiResponse = aiModel.call(prompt);
 
-        log.info("MayaAI with links response: {}", aiResponse.getResult().getOutput().getContent());
         MessageModel aiMessage = MessageConverter
                 .inputToAiMessage(new MessageInput(aiResponse.getResult().getOutput().getContent()));
         aiMessage.setConversationId(validConversationId);

@@ -3,16 +3,17 @@ package com.example.ia.mayaAI.services;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.reader.ExtractedTextFormatter;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,8 +21,14 @@ import java.util.stream.Collectors;
 @Service
 public class IndexService {
 
-    @Autowired
     private VectorStore vectorStore;
+
+    private final EmbeddingModel embeddingModel;
+
+    public IndexService(VectorStore vectorStore, EmbeddingModel embeddingModel) {
+        this.vectorStore = vectorStore;
+        this.embeddingModel = embeddingModel;
+    }
 
     public String indexAndSearchPdfFile(List<MultipartFile> files, String messageSearch){
         var config = PdfDocumentReaderConfig.builder()
@@ -35,6 +42,8 @@ public class IndexService {
         });
 
         var embeddingResult = vectorStore.similaritySearch(messageSearch);
+        this.cleanVectorStore();
+
         return embeddingResult.stream()
                 .map(result -> cleanText(result.getContent()))
                 .collect(Collectors.joining(System.lineSeparator()));
@@ -49,6 +58,8 @@ public class IndexService {
         });
 
         var embeddingResult = vectorStore.similaritySearch(messageSearch);
+        this.cleanVectorStore();
+
         return embeddingResult.stream()
                 .map(result -> cleanText(result.getContent()))
                 .collect(Collectors.joining(System.lineSeparator()));
@@ -56,5 +67,9 @@ public class IndexService {
 
     private String cleanText(String text){
         return text.replaceAll("\\s+", " ");
+    }
+
+    private void cleanVectorStore(){
+        this.vectorStore = new SimpleVectorStore(embeddingModel);
     }
 }
