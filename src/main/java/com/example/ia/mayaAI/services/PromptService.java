@@ -34,7 +34,6 @@ public class PromptService {
 
         String fullPrompt = "\n" +
                 basePrompt +
-                this.buildNewUserMessageContextToPrompt(userMessage) +
                 (messages.isEmpty()
                         ? ""
                         : this.buildMessagesContextToPrompt(messages)) +
@@ -43,14 +42,15 @@ public class PromptService {
                         : this.buildFilesContextToPrompt(filesContextResume)) +
                 (linksContextResume.isBlank()
                         ? ""
-                        : this.buildLinksContextToPrompt(linksContextResume));
+                        : this.buildLinksContextToPrompt(linksContextResume)) +
+                this.buildNewUserMessageContextToPrompt(userMessage);
 
         return new Prompt(fullPrompt);
     }
 
     private String buildNewUserMessageContextToPrompt(MessageModel messageModel) {
         return String
-                .format("\n\n[NOVA MENSAGEM DO USUÁRIO]\nUSER: %s", messageModel.getMessage());
+                .format("\n[NOVA MENSAGEM DO USUÁRIO]\nUSER: %s", messageModel.getMessage());
     }
 
     private String buildMessagesContextToPrompt(List<MessageModel> messages) {

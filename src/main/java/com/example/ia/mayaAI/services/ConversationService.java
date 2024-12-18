@@ -24,10 +24,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.awt.*;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Optional;
 
 @Log4j2
 @Service
@@ -81,6 +79,7 @@ public class ConversationService {
 
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         String searchResults = indexService.indexAndSearchPdfFile(files, messageModel.getMessage());
+        this.setMessageModelFiles(messageModel, files);
 
         String validConversationId = this.getValidConversationId(conversationId, username);
         messageModel.setConversationId(validConversationId);
@@ -92,6 +91,7 @@ public class ConversationService {
         );
 
         MessageModel clearedAiMessage = this.getTitleAndClearMessage(validConversationId, aiResponse);
+        this.setMessageModelFiles(clearedAiMessage, files);
 
         this.messageService.saveMessage(messageModel);
         return this.messageService.saveMessage(clearedAiMessage);
@@ -125,6 +125,13 @@ public class ConversationService {
                     return this.buildConversationPreviewResponse(conversation, lastMessage);
                 }).sorted(Comparator.comparing(ConversationPreviewResponse::getUpdatedAt).reversed())
                 .toList();
+    }
+
+    private void setMessageModelFiles(MessageModel messageModel, List<MultipartFile> files){
+        files.forEach(file -> {
+            String filename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
+            messageModel.addFilename(filename);
+        });
     }
 
     private MessageModel getTitleAndClearMessage(String validConversationId,
