@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.reader.ExtractedTextFormatter;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
@@ -42,11 +41,8 @@ public class IndexService {
         });
 
         var embeddingResult = vectorStore.similaritySearch(messageSearch);
-        this.cleanVectorStore();
-
-        return embeddingResult.stream()
-                .map(result -> cleanText(result.getContent()))
-                .collect(Collectors.joining(System.lineSeparator()));
+        this.clearVectorStore();
+        return collectFromEmbeddingResult(embeddingResult);
     }
 
     public String indexAndSearchWebPage(List<String> webPages, String messageSearch) {
@@ -58,18 +54,21 @@ public class IndexService {
         });
 
         var embeddingResult = vectorStore.similaritySearch(messageSearch);
-        this.cleanVectorStore();
+        this.clearVectorStore();
+        return collectFromEmbeddingResult(embeddingResult);
+    }
 
-        return embeddingResult.stream()
-                .map(result -> cleanText(result.getContent()))
+    private String collectFromEmbeddingResult(List<Document> embeddingResult){
+        return embeddingResult.parallelStream()
+                .map(result -> clearText(result.getContent()))
                 .collect(Collectors.joining(System.lineSeparator()));
     }
 
-    private String cleanText(String text){
+    private String clearText(String text){
         return text.replaceAll("\\s+", " ");
     }
 
-    private void cleanVectorStore(){
+    private void clearVectorStore(){
         this.vectorStore = new SimpleVectorStore(embeddingModel);
     }
 }

@@ -15,15 +15,12 @@ import com.example.ia.mayaAI.utils.UuidGenerator;
 import com.example.ia.mayaAI.utils.ZonedDateGenerate;
 import com.mongodb.client.MongoDatabase;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.ai.chat.messages.MessageType;
-import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.awt.*;
 import java.util.*;
 import java.util.List;
 
@@ -35,13 +32,10 @@ public class ConversationService {
 
     @Autowired
     private MessageService messageService;
-
     @Autowired
     private AiService aiService;
-
     @Autowired
     private LinkFetchService linkFetchService;
-
     @Autowired
     private IndexService indexService;
 
@@ -51,9 +45,6 @@ public class ConversationService {
     private static final String TITLE_FIELD = "title";
     private static final String SORTED_FIELD = "createdAt";
     private static final String UPDATED_FIELD = "updatedAt";
-
-    @Autowired
-    private OpenAiChatModel aiModel;
 
     @Autowired
     public ConversationService(MongoDatabase mongoDatabase) {
@@ -118,12 +109,13 @@ public class ConversationService {
                         SORTED_FIELD,
                         DocumentSortDirection.DESC
                 );
-        return conversations.stream()
+        return conversations.parallelStream()
                 .map(conversation -> {
                     MessageModel lastMessage = this.messageService
                             .findLastUserMessage(conversation.getId());
                     return this.buildConversationPreviewResponse(conversation, lastMessage);
-                }).sorted(Comparator.comparing(ConversationPreviewResponse::getUpdatedAt).reversed())
+                })
+                .sorted(Comparator.comparing(ConversationPreviewResponse::getUpdatedAt).reversed())
                 .toList();
     }
 
@@ -214,7 +206,10 @@ public class ConversationService {
                         validConversationId,
                         this.messageService.getSortedMessages(validConversationId),
                         filesContextResume,
-                        extractedLinks.isEmpty() ? "" : this.getLinksContextResume(extractedLinks, messageModel.getMessage())
+                        extractedLinks.isEmpty()
+                                ? ""
+                                : this.getLinksContextResume(extractedLinks, messageModel.getMessage()
+                        )
                 );
     }
 
