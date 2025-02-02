@@ -76,4 +76,13 @@ public interface MongoRepository {
      * @return uma lista contendo todas as entidades encontradas
      */
     <R, T> List<T> findAllBy(String key, R value, Class<T> responseType, String sortField, DocumentSortDirection direction);
+
+    /**
+     * Deleta todas as entidades.
+     *
+     * @param key a chave para a busca
+     * @param value o valor da chave
+     * @return a quantidade de entidades deletadas.
+     */
+    <T> long deleteAllBy(String key, T value);
 }

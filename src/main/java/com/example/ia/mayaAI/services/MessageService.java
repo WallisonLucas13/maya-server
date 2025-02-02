@@ -50,4 +50,9 @@ public class MessageService {
                 .orElse(null);
     }
 
+    public long deleteMessagesByConversationId(String conversationId){
+        return mongoRepository
+                .deleteAllBy(FIND_BY_CONVERSATION_ID, conversationId);
+    }
+
 }

@@ -97,4 +97,11 @@ public class MongoRepositoryImpl implements MongoRepository {
                 .map(document -> objectMapper.convertValue(document, responseType))
                 .into(new ArrayList<>());
     }
+
+    @Override
+    public <T> long deleteAllBy(String key, T value) {
+        Bson filter = Filters.and(Filters.eq(key, value));
+        log.info("Deleting all entities by key: {}", filter);
+        return collection.deleteMany(filter).getDeletedCount();
+    }
 }

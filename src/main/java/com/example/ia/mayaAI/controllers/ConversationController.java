@@ -57,4 +57,12 @@ public class ConversationController {
     public ResponseEntity<List<ConversationPreviewResponse>> getConversations(){
         return ResponseEntity.ok(conversationService.getConversationsPreview());
     }
+
+    @DeleteMapping("/conversas")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<String> deleteConversationsByLoggedUsername(){
+        long deletedConversationsCount = conversationService.deleteConversationsByUsername();
+        String response = "Total de conversas apagadas: %s";
+        return ResponseEntity.ok(String.format(response, deletedConversationsCount));
+    }
 }

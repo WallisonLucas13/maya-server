@@ -101,14 +101,8 @@ public class ConversationService {
 
     public List<ConversationPreviewResponse> getConversationsPreview(){
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        List<ConversationModel> conversations = mongoRepository
-                .findAllBy(
-                        FIND_BY_USERNAME,
-                        username,
-                        ConversationModel.class,
-                        SORTED_FIELD,
-                        DocumentSortDirection.DESC
-                );
+        List<ConversationModel> conversations = getConversationsByUsername(username);
+
         return conversations.parallelStream()
                 .map(conversation -> {
                     MessageModel lastMessage = this.messageService
@@ -118,6 +112,36 @@ public class ConversationService {
                 .sorted(Comparator.comparing(ConversationPreviewResponse::getUpdatedAt).reversed())
                 .toList();
     }
+
+    public long deleteConversationsByUsername(){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        List<ConversationModel> conversations = this.getConversationsByUsername(username);
+
+        long totalMessagesDeleted = conversations.parallelStream()
+                .mapToLong(i -> {
+                    return this.messageService.deleteMessagesByConversationId(i.getId());
+                })
+                .sum();
+
+        log.info("Total messages deleted: {}", totalMessagesDeleted);
+
+        long totalConversationsDeleted = mongoRepository
+                .deleteAllBy(FIND_BY_USERNAME, username);
+
+        log.info("Total conversations deleted: {}", totalConversationsDeleted);
+        return totalConversationsDeleted;
+    }
+
+    private List<ConversationModel> getConversationsByUsername(String username){
+        return mongoRepository
+                .findAllBy(
+                        FIND_BY_USERNAME,
+                        username,
+                        ConversationModel.class,
+                        SORTED_FIELD,
+                        DocumentSortDirection.DESC
+                );
+    };
 
     private void setMessageModelFiles(MessageModel messageModel, List<MultipartFile> files){
         files.forEach(file -> {
