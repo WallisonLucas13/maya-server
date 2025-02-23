@@ -63,6 +63,14 @@ public class IndexService {
         }
     }
 
+    public String tokenize(String text){
+        var document = new Document(text);
+        var textSplitter = new TokenTextSplitter().apply(List.of(document));
+        return textSplitter.parallelStream()
+                .map(Document::getContent)
+                .collect(Collectors.joining(System.lineSeparator()));
+    }
+
     private String collectFromEmbeddingResult(List<Document> embeddingResult){
         return embeddingResult.parallelStream()
                 .map(result -> clearText(result.getContent()))

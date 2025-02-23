@@ -23,9 +23,6 @@ public class AiService {
     @Autowired
     private PromptService promptService;
 
-    @Autowired
-    private IndexService indexService;
-
     public MessageModel callAI(
             MessageModel userMessage,
             String validConversationId,
@@ -45,8 +42,6 @@ public class AiService {
 
         ChatResponse aiResponse = aiModel.call(prompt);
         String aiMessage = aiResponse.getResult().getOutput().getContent();
-        log.info("PROMPT LINKS: {}", linksContextResume);
-        log.info("PROMPT: {}", prompt.getContents());
         log.info("AI Response From Conversation: {}", aiMessage);
 
         MessageModel aiResponseModel = MessageConverter

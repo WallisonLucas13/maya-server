@@ -4,6 +4,7 @@ import com.example.ia.mayaAI.models.MessageModel;
 import com.example.ia.mayaAI.models.UserModel;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,9 @@ public class PromptService {
 
     @Value("classpath:prompts.yml")
     private Resource promptsResource;
+
+    @Autowired
+    private IndexService indexService;
 
     public Prompt promptGenerate(
             String username,
@@ -59,7 +63,8 @@ public class PromptService {
                 .map(message -> message.getType() + ": " + message.getMessage())
                 .reduce("", (a, b) -> a + "\n" + b);
 
-        return String.format("\n\n[HISTÓRICO DE MENSAGENS]%s", conversationContext);
+        String tokenizedContext = indexService.tokenize(conversationContext);
+        return String.format("\n\n[HISTÓRICO DE MENSAGENS]%s", tokenizedContext);
     }
 
     private String buildFilesContextToPrompt(String filesContextResume) {
