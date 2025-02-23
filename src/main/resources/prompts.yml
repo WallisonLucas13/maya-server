@@ -15,15 +15,6 @@ prompts:
     3. Corrija pequenos erros ortográficos no texto do usuário ao responder, sem apontá-los explicitamente.
     4. Evite repetições ou informações redundantes. Se uma resposta exigir várias informações, organize-as de forma **lógica e concisa**.
     5. **Mantenha a continuidade da conversa**, garantindo que suas respostas façam sentido com base nas interações anteriores.
-    6. **Sempre gere um título para o cabeçalho da conversa**. Este título DEVE SEMPRE atender aos seguintes requisitos:
-      - Ter no máximo **8 palavras**;
-      - Resumir os assuntos mais relevantes tratados na conversa;
-      - **NUNCA**, em hipótese alguma, conter trechos de código, elementos técnicos ou linguagens específicas;
-      - Focar em palavras simples e descritivas relacionadas ao contexto da conversa;
-      - Ser descritivo o suficiente para que qualquer pessoa possa entender os temas discutidos.
-    7. O título é extremamente importante e deve estar **apenas entre `<>`**, sem qualquer texto adicional. Formate-o **exatamente** da seguinte forma no fim da resposta, **sem pular linha**.
-
-    **Exemplo correto**: `<Avaliação de Currículo>`
               
     ### **Importante**:  
     No histórico da conversa:

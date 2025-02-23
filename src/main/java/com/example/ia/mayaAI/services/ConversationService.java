@@ -58,10 +58,11 @@ public class ConversationService {
 
         MessageModel aiResponse = sendMessageToAI(messageModel, validConversationId, "");
 
-        MessageModel clearedAiMessage = this.getTitleAndClearMessage(validConversationId, aiResponse);
-
         this.messageService.saveMessage(messageModel);
-        return this.messageService.saveMessage(clearedAiMessage);
+        this.messageService.saveMessage(aiResponse);
+
+        this.updateConversationTitle(validConversationId);
+        return aiResponse;
     }
 
     public MessageModel sendMessageWithFile(String conversationId,
@@ -81,11 +82,13 @@ public class ConversationService {
                 searchResults
         );
 
-        MessageModel clearedAiMessage = this.getTitleAndClearMessage(validConversationId, aiResponse);
-        this.setMessageModelFiles(clearedAiMessage, files);
+        this.setMessageModelFiles(aiResponse, files);
 
         this.messageService.saveMessage(messageModel);
-        return this.messageService.saveMessage(clearedAiMessage);
+        this.messageService.saveMessage(aiResponse);
+
+        this.updateConversationTitle(validConversationId);
+        return aiResponse;
     }
 
     public ConversationResponse getConversationById(String conversationId){
@@ -150,24 +153,14 @@ public class ConversationService {
         });
     }
 
-    private MessageModel getTitleAndClearMessage(String validConversationId,
-                                                 MessageModel aiMessageModel){
-        String title = TitleFormatOperations
-                .extractTitleBlock(aiMessageModel.getMessage());
+    private void updateConversationTitle(String conversationId){
+        List<MessageModel> messages = this.messageService.getSortedMessages(conversationId);
+        String title = aiService.callAIByTitleGenerate(messages);
 
         if(!title.isBlank()){
-            this.updateConversationTitle(validConversationId, title);
+            mongoRepository.update(conversationId, TITLE_FIELD, title);
+            mongoRepository.update(conversationId, UPDATED_FIELD, ZonedDateGenerate.generate());
         }
-
-        String clearedMessage = TitleFormatOperations
-                .clearTitleBlock(aiMessageModel.getMessage());
-        aiMessageModel.setMessage(clearedMessage);
-        return aiMessageModel;
-    }
-
-    private void updateConversationTitle(String conversationId, String title){
-        mongoRepository.update(conversationId, TITLE_FIELD, title);
-        mongoRepository.update(conversationId, UPDATED_FIELD, ZonedDateGenerate.generate());
     }
 
     private String getValidConversationId(String conversationId, String username){

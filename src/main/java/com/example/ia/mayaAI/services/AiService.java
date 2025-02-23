@@ -23,6 +23,9 @@ public class AiService {
     @Autowired
     private PromptService promptService;
 
+    @Autowired
+    private IndexService indexService;
+
     public MessageModel callAI(
             MessageModel userMessage,
             String validConversationId,
@@ -40,13 +43,28 @@ public class AiService {
                         linksContextResume
                 );
 
-        log.info(prompt.getContents());
         ChatResponse aiResponse = aiModel.call(prompt);
+        String aiMessage = aiResponse.getResult().getOutput().getContent();
+        log.info("PROMPT LINKS: {}", linksContextResume);
+        log.info("PROMPT: {}", prompt.getContents());
+        log.info("AI Response From Conversation: {}", aiMessage);
 
-        MessageModel aiMessage = MessageConverter
-                .inputToAiMessage(new MessageInput(aiResponse.getResult().getOutput().getContent()));
-        aiMessage.setConversationId(validConversationId);
+        MessageModel aiResponseModel = MessageConverter
+                .inputToAiMessage(new MessageInput(aiMessage));
+        aiResponseModel.setConversationId(validConversationId);
 
+        return aiResponseModel;
+    }
+
+    public String callAIByTitleGenerate(
+            List<MessageModel> messagesContext
+    ){
+        Prompt prompt = this.promptService
+                        .buildTitlePromptFromConversationHistory(messagesContext);
+
+        ChatResponse aiResponse = aiModel.call(prompt);
+        String aiMessage = aiResponse.getResult().getOutput().getContent();
+        log.info("AI Response From Title Generation: {}", aiMessage);
         return aiMessage;
     }
 }

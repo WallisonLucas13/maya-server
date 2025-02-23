@@ -46,16 +46,21 @@ public class IndexService {
     }
 
     public String indexAndSearchWebPage(List<String> webPages, String messageSearch) {
-        webPages.forEach(page -> {
-            String textContent = Jsoup.parse(page).text();
-            Document document = new Document(textContent);
-            var textSplitter = new TokenTextSplitter().apply(List.of(document));
-            vectorStore.add(textSplitter);
-        });
+        try {
+            webPages.forEach(page -> {
+                String textContent = Jsoup.parse(page).text();
+                Document document = new Document(textContent);
+                var textSplitter = new TokenTextSplitter().apply(List.of(document));
+                vectorStore.add(textSplitter);
+            });
 
-        var embeddingResult = vectorStore.similaritySearch(messageSearch);
-        this.clearVectorStore();
-        return collectFromEmbeddingResult(embeddingResult);
+            var embeddingResult = vectorStore.similaritySearch(messageSearch);
+            this.clearVectorStore();
+            return collectFromEmbeddingResult(embeddingResult);
+        } catch (Exception e) {
+            log.error("Error while indexing and searching web pages");
+            return "";
+        }
     }
 
     private String collectFromEmbeddingResult(List<Document> embeddingResult){
