@@ -10,7 +10,6 @@ import com.example.ia.mayaAI.responses.ConversationPreviewResponse;
 import com.example.ia.mayaAI.responses.ConversationResponse;
 import com.example.ia.mayaAI.responses.MessageResponse;
 import com.example.ia.mayaAI.utils.LinkExtractor;
-import com.example.ia.mayaAI.utils.TitleFormatOperations;
 import com.example.ia.mayaAI.utils.UuidGenerator;
 import com.example.ia.mayaAI.utils.ZonedDateGenerate;
 import com.mongodb.client.MongoDatabase;
@@ -23,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Service
@@ -68,9 +68,8 @@ public class ConversationService {
     public MessageModel sendMessageWithFile(String conversationId,
                                             MessageModel messageModel,
                                             List<MultipartFile> files){
-
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        String searchResults = indexService.indexAndSearchPdfFile(files, messageModel.getMessage());
+        String searchResults = getIndexedFilesResumed(files, messageModel.getMessage());
         this.setMessageModelFiles(messageModel, files);
 
         String validConversationId = this.getValidConversationId(conversationId, username);
@@ -89,6 +88,16 @@ public class ConversationService {
 
         this.updateConversationTitle(validConversationId);
         return aiResponse;
+    }
+
+    private String getIndexedFilesResumed(List<MultipartFile> files, String messageSearch){
+        return files.stream()
+                .map(file -> {
+                    String filename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
+                    return filename.toUpperCase() + ":\n" + indexService
+                            .applyFileIndex(file, messageSearch);
+                })
+                .collect(Collectors.joining(System.lineSeparator()));
     }
 
     public ConversationResponse getConversationById(String conversationId){
@@ -235,6 +244,6 @@ public class ConversationService {
             return this.linkFetchService.fetchContent(link);
         }).toList();
 
-        return indexService.indexAndSearchWebPage(contentsLinks, messageSearch);
+        return indexService.applyWebPageIndex(contentsLinks, messageSearch);
     }
 }
