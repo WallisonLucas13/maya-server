@@ -20,6 +20,29 @@ public class ConversationController {
     @Autowired
     private ConversationService conversationService;
 
+    @GetMapping("/conversas/preview")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<List<ConversationPreviewResponse>> getConversationsPreview(){
+        return ResponseEntity.ok(conversationService.getConversationsPreview());
+    }
+
+    @GetMapping("/conversa/preview")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<ConversationPreviewResponse> getConversationPreview(
+            @RequestParam(value = "conversationId") String conversationId
+    ){
+        return ResponseEntity.ok(conversationService.getConversationPreviewById(conversationId));
+    }
+
+    @GetMapping("/conversa")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<ConversationResponse> getConversation(
+            @RequestParam(value = "conversationId", required = false) String conversationId
+    ){
+        return ResponseEntity.ok(conversationService
+                .getConversationById(conversationId));
+    }
+
     @PostMapping("/mensagem")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<MessageResponse> sendMessage(
@@ -39,21 +62,6 @@ public class ConversationController {
 
         return ResponseEntity.ok(conversationService
                 .sendMessageWithFile(conversationId, input, files));
-    }
-
-    @GetMapping("/conversa")
-    @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<ConversationResponse> getConversation(
-            @RequestParam(value = "conversationId", required = false) String conversationId
-    ){
-        return ResponseEntity.ok(conversationService
-                .getConversationById(conversationId));
-    }
-
-    @GetMapping("/conversas/preview")
-    @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<List<ConversationPreviewResponse>> getConversationsPreview(){
-        return ResponseEntity.ok(conversationService.getConversationsPreview());
     }
 
     @DeleteMapping("/conversas")

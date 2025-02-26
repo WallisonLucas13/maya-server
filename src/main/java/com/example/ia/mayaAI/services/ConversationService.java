@@ -67,29 +67,29 @@ public class ConversationService {
 
     public MessageResponse sendMessage(String conversationId, MessageInput messageInput){
         String username = this.getUsername();
-        String validConversationId = this.getValidConversationId(conversationId, username);
+        ConversationModel validConversation = this.getValidConversation(conversationId, username);
 
         MessageModel userMessageModel = MessageModel.buildModel(
                         messageInput.message(),
                         MessageType.USER,
-                        validConversationId
+                        validConversation.getId()
         );
         String aiResponse = aiService.callSimpleAi(
                 username,
                 userMessageModel,
-                this.messageService.getSortedMessages(validConversationId),
+                this.messageService.getSortedMessages(validConversation.getId()),
                 this.getLinksContextResumed(userMessageModel)
         );
         MessageModel aiMessageModel = MessageModel.buildModel(
                         aiResponse,
                         MessageType.SYSTEM,
-                        validConversationId
+                        validConversation.getId()
         );
 
         this.messageService.saveMessage(userMessageModel);
         this.messageService.saveMessage(aiMessageModel);
 
-        this.updateConversationTitleAsync(validConversationId);
+        this.updateConversationTitle(validConversation);
         return this.buildMessageResponse(aiResponse, aiMessageModel);
     }
 
@@ -97,12 +97,12 @@ public class ConversationService {
                                             MessageInput messageInput,
                                             List<MultipartFile> files){
         String username = this.getUsername();
-        String validConversationId = this.getValidConversationId(conversationId, username);
+        ConversationModel validConversation = this.getValidConversation(conversationId, username);
 
         MessageModel userMessageModel = MessageModel.buildModel(
                         messageInput.message(),
                         MessageType.USER,
-                        validConversationId
+                        validConversation.getId()
         );
         String filesResumed = getIndexedFilesResumed(files, userMessageModel.getMessage());
         this.setMessageModelFiles(userMessageModel, files);
@@ -116,14 +116,14 @@ public class ConversationService {
         MessageModel aiMessageModel = MessageModel.buildModel(
                         aiResponse,
                         MessageType.SYSTEM,
-                        validConversationId
+                        validConversation.getId()
         );
 
         this.setMessageModelFiles(aiMessageModel, files);
         this.messageService.saveMessage(userMessageModel);
         this.messageService.saveMessage(aiMessageModel);
 
-        this.updateConversationTitleAsync(validConversationId);
+        this.updateConversationTitle(validConversation);
         return this.buildMessageResponse(aiResponse, aiMessageModel);
     }
 
@@ -150,6 +150,16 @@ public class ConversationService {
                 })
                 .sorted(Comparator.comparing(ConversationPreviewResponse::updatedAt).reversed())
                 .toList();
+    }
+
+    public ConversationPreviewResponse getConversationPreviewById(String conversationId){
+        ConversationModel conversation = mongoRepository
+                .findBy(FIND_BY_ID, conversationId, ConversationModel.class)
+                .orElseThrow(() -> new NotFoundConversationException("Conversa não encontrada!"));
+
+        MessageModel lastMessage = this.messageService
+                .findLastUserMessage(conversationId);
+        return this.buildConversationPreviewResponse(conversation, lastMessage);
     }
 
     public long deleteConversationsByUsername(){
@@ -189,24 +199,32 @@ public class ConversationService {
         });
     }
 
-    private void updateConversationTitleAsync(String conversationId){
-        CompletableFuture.runAsync(() -> {
-            List<MessageModel> messages = this.messageService.getSortedMessages(conversationId);
-            String title = aiService.callAIByTitleGenerate(messages);
-
-            if(!title.isBlank()){
-                mongoRepository.update(conversationId, TITLE_FIELD, title);
-                mongoRepository.update(conversationId, UPDATED_FIELD, ZonedDateGenerate.generate());
-            }
-        });
+    private void updateConversationTitle(ConversationModel conversation){
+        boolean isRunAsync = (conversation.getTitle() != null && !conversation.getTitle().isBlank());
+        if(isRunAsync){
+            CompletableFuture.runAsync(() -> {
+                this.getConversationTitleByAi(conversation.getId());
+            });
+            return;
+        }
+        this.getConversationTitleByAi(conversation.getId());
     }
 
-    private String getValidConversationId(String conversationId, String username){
+    private void getConversationTitleByAi(String conversationId){
+        List<MessageModel> messages = this.messageService.getSortedMessages(conversationId);
+        String title = aiService.callAIByTitleGenerate(messages);
+
+        if(!title.isBlank()){
+            mongoRepository.update(conversationId, TITLE_FIELD, title);
+            mongoRepository.update(conversationId, UPDATED_FIELD, ZonedDateGenerate.generate());
+        }
+    }
+
+    private ConversationModel getValidConversation(String conversationId, String username){
         Optional<ConversationModel> conversation = mongoRepository
                 .findBy(FIND_BY_ID, conversationId, ConversationModel.class);
 
-        return conversation.map(ConversationModel::getId)
-                .orElseGet(() -> createConversation(username).getId());
+        return conversation.orElseGet(() -> createConversation(username));
     }
 
     private ConversationModel createConversation(String username){
