@@ -6,7 +6,7 @@ import com.example.ia.mayaAI.exceptions.NotFoundUserException;
 import com.example.ia.mayaAI.models.UserModel;
 import com.example.ia.mayaAI.repositories.common.MongoRepository;
 import com.example.ia.mayaAI.repositories.common.impl.MongoRepositoryImpl;
-import com.example.ia.mayaAI.responses.AuthResponse;
+import com.example.ia.mayaAI.responses.security.AuthResponse;
 import com.mongodb.client.MongoDatabase;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

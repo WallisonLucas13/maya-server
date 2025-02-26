@@ -8,13 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -54,13 +52,5 @@ public class IndexService {
             log.error("Error while indexing and searching web pages");
             return "";
         }
-    }
-
-    public String tokenize(String text){
-        var document = new Document(text);
-        var textSplitter = new TokenTextSplitter().apply(List.of(document));
-        return textSplitter.parallelStream()
-                .map(Document::getContent)
-                .collect(Collectors.joining(System.lineSeparator()));
     }
 }

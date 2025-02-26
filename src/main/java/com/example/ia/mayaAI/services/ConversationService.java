@@ -2,26 +2,32 @@ package com.example.ia.mayaAI.services;
 
 import com.example.ia.mayaAI.enums.DocumentSortDirection;
 import com.example.ia.mayaAI.exceptions.NotFoundConversationException;
+import com.example.ia.mayaAI.inputs.MessageInput;
 import com.example.ia.mayaAI.models.ConversationModel;
 import com.example.ia.mayaAI.models.MessageModel;
 import com.example.ia.mayaAI.repositories.common.MongoRepository;
 import com.example.ia.mayaAI.repositories.common.impl.MongoRepositoryImpl;
-import com.example.ia.mayaAI.responses.ConversationPreviewResponse;
-import com.example.ia.mayaAI.responses.ConversationResponse;
-import com.example.ia.mayaAI.responses.MessageResponse;
+import com.example.ia.mayaAI.responses.preview.ConversationPreviewResponse;
+import com.example.ia.mayaAI.responses.preview.MessagePreviewResponse;
+import com.example.ia.mayaAI.responses.principal.ConversationResponse;
+import com.example.ia.mayaAI.responses.principal.MessageResponse;
 import com.example.ia.mayaAI.utils.LinkExtractor;
 import com.example.ia.mayaAI.utils.UuidGenerator;
 import com.example.ia.mayaAI.utils.ZonedDateGenerate;
 import com.mongodb.client.MongoDatabase;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -38,7 +44,6 @@ public class ConversationService {
     private LinkFetchService linkFetchService;
     @Autowired
     private IndexService indexService;
-
     private static final String CONVERSATION_COLLECTION = "conversation";
     private static final String FIND_BY_ID = "_id";
     private static final String FIND_BY_USERNAME = "username";
@@ -51,53 +56,79 @@ public class ConversationService {
         this.mongoRepository = new MongoRepositoryImpl(mongoDatabase, CONVERSATION_COLLECTION);
     }
 
-    public MessageModel sendMessage(String conversationId, MessageModel messageModel){
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        String validConversationId = this.getValidConversationId(conversationId, username);
-        messageModel.setConversationId(validConversationId);
-
-        MessageModel aiResponse = sendMessageToAI(messageModel, validConversationId, "");
-
-        this.messageService.saveMessage(messageModel);
-        this.messageService.saveMessage(aiResponse);
-
-        this.updateConversationTitle(validConversationId);
-        return aiResponse;
+    private String getUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            return authentication.getName();
+        }
+        return null;
     }
 
-    public MessageModel sendMessageWithFile(String conversationId,
-                                            MessageModel messageModel,
-                                            List<MultipartFile> files){
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        String searchResults = getIndexedFilesResumed(files, messageModel.getMessage());
-        this.setMessageModelFiles(messageModel, files);
-
+    public MessageResponse sendMessage(String conversationId, MessageInput messageInput){
+        String username = this.getUsername();
         String validConversationId = this.getValidConversationId(conversationId, username);
-        messageModel.setConversationId(validConversationId);
 
-        MessageModel aiResponse = sendMessageToAI(
-                messageModel,
-                validConversationId,
-                searchResults
+        MessageModel userMessageModel = MessageModel
+                .buildModel(
+                        messageInput.message(),
+                        MessageType.USER,
+                        validConversationId
+                );
+
+        String aiResponse = aiService.callSimpleAi(
+                username,
+                userMessageModel,
+                this.messageService.getSortedMessages(validConversationId),
+                this.getLinksContextResumed(userMessageModel)
+        );
+        MessageModel aiMessageModel = MessageModel.buildModel(
+                        aiResponse,
+                        MessageType.SYSTEM,
+                        validConversationId
         );
 
-        this.setMessageModelFiles(aiResponse, files);
-
-        this.messageService.saveMessage(messageModel);
-        this.messageService.saveMessage(aiResponse);
+        this.messageService.saveMessage(userMessageModel);
+        this.messageService.saveMessage(aiMessageModel);
 
         this.updateConversationTitle(validConversationId);
-        return aiResponse;
+        return this.buildMessageResponse(aiResponse, aiMessageModel);
     }
 
-    private String getIndexedFilesResumed(List<MultipartFile> files, String messageSearch){
-        return files.stream()
-                .map(file -> {
-                    String filename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
-                    return filename.toUpperCase() + ":\n" + indexService
-                            .applyFileIndex(file, messageSearch);
-                })
-                .collect(Collectors.joining(System.lineSeparator()));
+    public MessageResponse sendMessageWithFile(String conversationId,
+                                            MessageInput messageInput,
+                                            List<MultipartFile> files){
+        String username = this.getUsername();
+        String validConversationId = this.getValidConversationId(conversationId, username);
+
+        MessageModel userMessageModel = MessageModel
+                .buildModel(
+                        messageInput.message(),
+                        MessageType.USER,
+                        validConversationId
+                );
+
+        String filesResumed = getIndexedFilesResumed(files, userMessageModel.getMessage());
+        log.info("Files Resumed: {}", filesResumed);
+        this.setMessageModelFiles(userMessageModel, files);
+
+        String aiResponse = aiService.callAIWithFilesResume(
+                username,
+                userMessageModel,
+                filesResumed,
+                this.getLinksContextResumed(userMessageModel)
+        );
+        MessageModel aiMessageModel = MessageModel.buildModel(
+                        aiResponse,
+                        MessageType.SYSTEM,
+                        validConversationId
+        );
+
+        this.setMessageModelFiles(aiMessageModel, files);
+        this.messageService.saveMessage(userMessageModel);
+        this.messageService.saveMessage(aiMessageModel);
+
+        this.updateConversationTitle(validConversationId);
+        return this.buildMessageResponse(aiResponse, aiMessageModel);
     }
 
     public ConversationResponse getConversationById(String conversationId){
@@ -112,7 +143,7 @@ public class ConversationService {
     }
 
     public List<ConversationPreviewResponse> getConversationsPreview(){
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        String username = this.getUsername();
         List<ConversationModel> conversations = getConversationsByUsername(username);
 
         return conversations.parallelStream()
@@ -121,12 +152,12 @@ public class ConversationService {
                             .findLastUserMessage(conversation.getId());
                     return this.buildConversationPreviewResponse(conversation, lastMessage);
                 })
-                .sorted(Comparator.comparing(ConversationPreviewResponse::getUpdatedAt).reversed())
+                .sorted(Comparator.comparing(ConversationPreviewResponse::updatedAt).reversed())
                 .toList();
     }
 
     public long deleteConversationsByUsername(){
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        String username = this.getUsername();
         List<ConversationModel> conversations = this.getConversationsByUsername(username);
 
         long totalMessagesDeleted = conversations.parallelStream()
@@ -153,7 +184,7 @@ public class ConversationService {
                         SORTED_FIELD,
                         DocumentSortDirection.DESC
                 );
-    };
+    }
 
     private void setMessageModelFiles(MessageModel messageModel, List<MultipartFile> files){
         files.forEach(file -> {
@@ -189,61 +220,68 @@ public class ConversationService {
         return mongoRepository.save(newConversation);
     }
 
+    private MessageResponse buildMessageResponse(String message, MessageModel messageModel){
+        return new MessageResponse(
+                messageModel.getId(),
+                messageModel.getConversationId(),
+                messageModel.getType(),
+                message,
+                messageModel.getFiles(),
+                messageModel.getCreatedAt()
+        );
+    }
+
     private ConversationResponse buildConversationResponse(ConversationModel conversation,
                                                            List<MessageModel> messages){
-        return ConversationResponse.builder()
-                .id(conversation.getId())
-                .username(conversation.getUsername())
-                .title(conversation.getTitle())
-                .messages(messages)
-                .createdAt(conversation.getCreatedAt())
-                .build();
+        return new ConversationResponse(
+                conversation.getId(),
+                conversation.getUsername(),
+                conversation.getTitle(),
+                messages,
+                conversation.getCreatedAt(),
+                conversation.getUpdatedAt()
+        );
     }
 
     private ConversationPreviewResponse buildConversationPreviewResponse(
             ConversationModel conversation,
             MessageModel lastMessage
     ){
-        return ConversationPreviewResponse.builder()
-                .id(conversation.getId())
-                .username(conversation.getUsername())
-                .title(conversation.getTitle())
-                .lastUserMessage(MessageResponse.builder()
-                        .id(lastMessage.getId())
-                        .type(lastMessage.getType())
-                        .message(lastMessage.getMessage())
-                        .createdAt(lastMessage.getCreatedAt())
-                        .build())
-                .createdAt(conversation.getCreatedAt())
-                .updatedAt(conversation.getUpdatedAt())
-                .build();
+        return new ConversationPreviewResponse(
+                conversation.getId(),
+                conversation.getTitle(),
+                conversation.getUsername(),
+                new MessagePreviewResponse(
+                        lastMessage.getId(),
+                        lastMessage.getType(),
+                        lastMessage.getMessage(),
+                        lastMessage.getCreatedAt()
+                ),
+                conversation.getCreatedAt(),
+                conversation.getUpdatedAt()
+        );
     }
 
-    private MessageModel sendMessageToAI(
-            MessageModel messageModel,
-            String validConversationId,
-            String filesContextResume
-    ){
+    private String getLinksContextResumed(MessageModel messageModel){
         var extractedLinks = LinkExtractor.extractLinks(messageModel.getMessage());
+        if(extractedLinks.isEmpty()){
+            return "";
+        }
 
-        return this.aiService
-                .callAI(
-                        messageModel,
-                        validConversationId,
-                        this.messageService.getSortedMessages(validConversationId),
-                        filesContextResume,
-                        extractedLinks.isEmpty()
-                                ? ""
-                                : this.getLinksContextResume(extractedLinks, messageModel.getMessage()
-                        )
-                );
-    }
-
-    private String getLinksContextResume(List<String> links, String messageSearch){
-        var contentsLinks = links.stream().map(link -> {
+        var contentsLinks = extractedLinks.stream().map(link -> {
             return this.linkFetchService.fetchContent(link);
         }).toList();
 
-        return indexService.applyWebPageIndex(contentsLinks, messageSearch);
+        return indexService.applyWebPageIndex(contentsLinks, messageModel.getMessage());
+    }
+
+    private String getIndexedFilesResumed(List<MultipartFile> files, String messageSearch){
+        return files.stream()
+                .map(file -> {
+                    String filename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
+                    return filename.toUpperCase() + ":\n" + indexService
+                            .applyFileIndex(file, messageSearch);
+                })
+                .collect(Collectors.joining(System.lineSeparator()));
     }
 }

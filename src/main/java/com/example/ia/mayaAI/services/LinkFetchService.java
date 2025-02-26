@@ -6,7 +6,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.net.URI;
-import java.util.Map;
 
 @Log4j2
 @Service

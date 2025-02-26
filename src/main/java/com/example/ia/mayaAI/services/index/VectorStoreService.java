@@ -1,5 +1,6 @@
 package com.example.ia.mayaAI.services.index;
 
+import com.example.ia.mayaAI.utils.TextCleaner;
 import lombok.Getter;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -27,12 +28,8 @@ public class VectorStoreService {
 
     public String collectFromEmbeddingResult(List<Document> embeddingResult){
         return embeddingResult.parallelStream()
-                .map(result -> clearText(result.getContent()))
+                .map(result -> TextCleaner.cleanText(result.getContent()))
                 .collect(Collectors.joining(System.lineSeparator()));
-    }
-
-    private String clearText(String text){
-        return text.replaceAll("\\s+", " ");
     }
 
     public void clearVectorStore(){

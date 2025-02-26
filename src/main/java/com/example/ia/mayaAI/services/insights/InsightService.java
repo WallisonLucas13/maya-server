@@ -30,7 +30,7 @@ import java.util.stream.Stream;
 public class InsightService {
 
     private final Map<String, MongoCollection<Document>> collectionMap;
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
     private static final String CONVERSATION_COLLECTION = "conversation";
     private static final String MESSAGE_COLLECTION = "message";
 

@@ -4,7 +4,6 @@ import com.example.ia.mayaAI.repositories.aggregations.AggregationOperation;
 import org.bson.Document;
 
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class SortOperationStrategy implements AggregationOperation {
     private final LinkedHashMap<String, Long> sortDetailsMap;

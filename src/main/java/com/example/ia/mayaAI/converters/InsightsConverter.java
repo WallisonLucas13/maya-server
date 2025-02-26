@@ -6,11 +6,11 @@ import com.example.ia.mayaAI.responses.insights.TotalMessagesResponse;
 public class InsightsConverter {
 
     public static TotalMessagesResponse convertToTotalMessagesResponse(TotalMessagesOutput totalMessagesOutput){
-        return TotalMessagesResponse.builder()
-                .year(totalMessagesOutput.getTotalMessagesDetails().getYear())
-                .month(totalMessagesOutput.getTotalMessagesDetails().getMonth())
-                .day(totalMessagesOutput.getTotalMessagesDetails().getDay())
-                .totalMessages(totalMessagesOutput.getTotalMessages())
-                .build();
+        return new TotalMessagesResponse(
+                totalMessagesOutput.getTotalMessagesDetails().getYear(),
+                totalMessagesOutput.getTotalMessagesDetails().getMonth(),
+                totalMessagesOutput.getTotalMessagesDetails().getDay(),
+                totalMessagesOutput.getTotalMessages()
+        );
     }
 }

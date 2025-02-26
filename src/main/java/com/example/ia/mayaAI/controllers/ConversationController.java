@@ -1,10 +1,9 @@
 package com.example.ia.mayaAI.controllers;
 
-import com.example.ia.mayaAI.converters.MessageConverter;
 import com.example.ia.mayaAI.inputs.MessageInput;
-import com.example.ia.mayaAI.models.MessageModel;
-import com.example.ia.mayaAI.responses.ConversationPreviewResponse;
-import com.example.ia.mayaAI.responses.ConversationResponse;
+import com.example.ia.mayaAI.responses.preview.ConversationPreviewResponse;
+import com.example.ia.mayaAI.responses.principal.ConversationResponse;
+import com.example.ia.mayaAI.responses.principal.MessageResponse;
 import com.example.ia.mayaAI.services.ConversationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,24 +22,23 @@ public class ConversationController {
 
     @PostMapping("/mensagem")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<MessageModel> sendMessage(
+    public ResponseEntity<MessageResponse> sendMessage(
             @RequestBody MessageInput input,
             @RequestParam(value = "conversationId", required = false, defaultValue = "") String conversationId){
 
-        MessageModel messageModel = MessageConverter.inputToUserMessage(input);
-        return ResponseEntity.ok(conversationService.sendMessage(conversationId, messageModel));
+        return ResponseEntity.ok(conversationService
+                .sendMessage(conversationId, input));
     }
 
     @PostMapping("/files/mensagem")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<MessageModel> sendMessageWithFile(
+    public ResponseEntity<MessageResponse> sendMessageWithFile(
             @RequestParam("files") List<MultipartFile> files,
             @RequestParam("input") MessageInput input,
             @RequestParam(value = "conversationId", required = false, defaultValue = "") String conversationId){
 
-        MessageModel messageModel = MessageConverter.inputToUserMessage(input);
         return ResponseEntity.ok(conversationService
-                .sendMessageWithFile(conversationId, messageModel, files));
+                .sendMessageWithFile(conversationId, input, files));
     }
 
     @GetMapping("/conversa")

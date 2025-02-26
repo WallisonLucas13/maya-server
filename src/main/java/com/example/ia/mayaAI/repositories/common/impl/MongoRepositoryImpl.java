@@ -23,7 +23,7 @@ import java.util.Optional;
 public class MongoRepositoryImpl implements MongoRepository {
 
     private final MongoCollection<Document> collection;
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     @Autowired
     public MongoRepositoryImpl(MongoDatabase mongoDatabase, String collectionName) {
@@ -36,7 +36,7 @@ public class MongoRepositoryImpl implements MongoRepository {
     @Override
     public <T> T save(T entity) {
         Document document = objectMapper.convertValue(entity, Document.class);
-        log.info("Saving entity: {}", document);
+        log.info("Saving entity...");
         if(!this.update(entity)){
             collection.insertOne(document);
         }
@@ -46,7 +46,7 @@ public class MongoRepositoryImpl implements MongoRepository {
     @Override
     public <T> boolean update(T entity) {
         Document document = objectMapper.convertValue(entity, Document.class);
-        log.info("Updating entity: {}", document);
+        log.info("Updating entity...");
         UpdateResult result = collection
                 .replaceOne(Filters.eq("_id", document.get("_id")), document);
 
@@ -57,14 +57,14 @@ public class MongoRepositoryImpl implements MongoRepository {
     public <T> void update(String key, String field, T value) {
         Document filter = new Document("_id", key);
         Document update = new Document("$set", new Document(field, value));
-        log.info("Updating field: {}", update);
+        log.info("Updating document: {} with [{}: {}]", key, field, value);
         collection.updateOne(filter, update);
     }
 
     @Override
     public <R, T> Optional<T> findBy(String key, R value, Class<T> responseType) {
         Bson filter = Filters.and(Filters.eq(key, value));
-        log.info("Finding entity by key: {}", filter);
+        log.info("Finding entity by [{}: {}]", key, value);
         return Optional.ofNullable(collection.find(filter).first())
                 .map(document -> objectMapper.convertValue(document, responseType));
     }
@@ -73,7 +73,7 @@ public class MongoRepositoryImpl implements MongoRepository {
     public <R, T> List<T> findAllBy(String key, R value, Class<T> responseType) {
         Bson filter = Filters.and(Filters.eq(key, value));
         Bson sorter = Sorts.ascending("createdAt");
-        log.info("Finding all entities by key: {}", filter);
+        log.info("Finding all entities by [{}: {}]", key, value);
         return collection.find(filter)
                 .sort(sorter)
                 .map(document -> objectMapper.convertValue(document, responseType))
@@ -91,7 +91,7 @@ public class MongoRepositoryImpl implements MongoRepository {
                 ? Sorts.ascending(sortField)
                 : Sorts.descending(sortField);
 
-        log.info("Finding all entities by key: {} and sort by field: {}", filter, sorter);
+        log.info("Finding all entities by [{}: {}], with sort [{}: {}]", key, value, sortField, direction.name().toLowerCase());
         return collection.find(filter)
                 .sort(sorter)
                 .map(document -> objectMapper.convertValue(document, responseType))
@@ -101,7 +101,7 @@ public class MongoRepositoryImpl implements MongoRepository {
     @Override
     public <T> long deleteAllBy(String key, T value) {
         Bson filter = Filters.and(Filters.eq(key, value));
-        log.info("Deleting all entities by key: {}", filter);
+        log.info("Deleting all entities by [{}: {}]", key, value);
         return collection.deleteMany(filter).getDeletedCount();
     }
 }

@@ -1,6 +1,5 @@
 package com.example.ia.mayaAI.controllers;
 
-import com.example.ia.mayaAI.outputs.insights.TotalMessagesOutput;
 import com.example.ia.mayaAI.responses.insights.TotalMessagesResponse;
 import com.example.ia.mayaAI.services.insights.InsightService;
 import org.springframework.beans.factory.annotation.Autowired;

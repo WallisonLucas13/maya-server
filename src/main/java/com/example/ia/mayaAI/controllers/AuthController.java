@@ -3,7 +3,7 @@ package com.example.ia.mayaAI.controllers;
 import com.example.ia.mayaAI.converters.UserConverter;
 import com.example.ia.mayaAI.inputs.UserInput;
 import com.example.ia.mayaAI.models.UserModel;
-import com.example.ia.mayaAI.responses.AuthResponse;
+import com.example.ia.mayaAI.responses.security.AuthResponse;
 import com.example.ia.mayaAI.services.security.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
