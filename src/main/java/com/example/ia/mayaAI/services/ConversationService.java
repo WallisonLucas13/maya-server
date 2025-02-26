@@ -28,6 +28,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -68,13 +69,11 @@ public class ConversationService {
         String username = this.getUsername();
         String validConversationId = this.getValidConversationId(conversationId, username);
 
-        MessageModel userMessageModel = MessageModel
-                .buildModel(
+        MessageModel userMessageModel = MessageModel.buildModel(
                         messageInput.message(),
                         MessageType.USER,
                         validConversationId
-                );
-
+        );
         String aiResponse = aiService.callSimpleAi(
                 username,
                 userMessageModel,
@@ -90,7 +89,7 @@ public class ConversationService {
         this.messageService.saveMessage(userMessageModel);
         this.messageService.saveMessage(aiMessageModel);
 
-        this.updateConversationTitle(validConversationId);
+        this.updateConversationTitleAsync(validConversationId);
         return this.buildMessageResponse(aiResponse, aiMessageModel);
     }
 
@@ -100,13 +99,11 @@ public class ConversationService {
         String username = this.getUsername();
         String validConversationId = this.getValidConversationId(conversationId, username);
 
-        MessageModel userMessageModel = MessageModel
-                .buildModel(
+        MessageModel userMessageModel = MessageModel.buildModel(
                         messageInput.message(),
                         MessageType.USER,
                         validConversationId
-                );
-
+        );
         String filesResumed = getIndexedFilesResumed(files, userMessageModel.getMessage());
         this.setMessageModelFiles(userMessageModel, files);
 
@@ -126,7 +123,7 @@ public class ConversationService {
         this.messageService.saveMessage(userMessageModel);
         this.messageService.saveMessage(aiMessageModel);
 
-        this.updateConversationTitle(validConversationId);
+        this.updateConversationTitleAsync(validConversationId);
         return this.buildMessageResponse(aiResponse, aiMessageModel);
     }
 
@@ -192,14 +189,16 @@ public class ConversationService {
         });
     }
 
-    private void updateConversationTitle(String conversationId){
-        List<MessageModel> messages = this.messageService.getSortedMessages(conversationId);
-        String title = aiService.callAIByTitleGenerate(messages);
+    private void updateConversationTitleAsync(String conversationId){
+        CompletableFuture.runAsync(() -> {
+            List<MessageModel> messages = this.messageService.getSortedMessages(conversationId);
+            String title = aiService.callAIByTitleGenerate(messages);
 
-        if(!title.isBlank()){
-            mongoRepository.update(conversationId, TITLE_FIELD, title);
-            mongoRepository.update(conversationId, UPDATED_FIELD, ZonedDateGenerate.generate());
-        }
+            if(!title.isBlank()){
+                mongoRepository.update(conversationId, TITLE_FIELD, title);
+                mongoRepository.update(conversationId, UPDATED_FIELD, ZonedDateGenerate.generate());
+            }
+        });
     }
 
     private String getValidConversationId(String conversationId, String username){

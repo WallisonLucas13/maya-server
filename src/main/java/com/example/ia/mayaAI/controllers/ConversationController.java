@@ -50,9 +50,9 @@ public class ConversationController {
                 .getConversationById(conversationId));
     }
 
-    @GetMapping("/conversas")
+    @GetMapping("/conversas/preview")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<List<ConversationPreviewResponse>> getConversations(){
+    public ResponseEntity<List<ConversationPreviewResponse>> getConversationsPreview(){
         return ResponseEntity.ok(conversationService.getConversationsPreview());
     }
 

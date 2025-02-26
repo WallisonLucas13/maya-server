@@ -36,7 +36,7 @@ public class AiService {
 
         ChatResponse aiResponse = aiModel.call(prompt);
         String aiMessage = aiResponse.getResult().getOutput().getContent();
-        log.info("Simple AI Response: {}", aiMessage);
+        log.info("{} call to Simple Ai...", username);
         return aiMessage;
     }
     public String callAIWithFilesResume(
@@ -55,7 +55,7 @@ public class AiService {
 
         ChatResponse aiResponse = aiModel.call(prompt);
         String aiMessage = aiResponse.getResult().getOutput().getContent();
-        log.info("AI With Files Response: {}", aiMessage);
+        log.info("{} call to Files Ai...", username);
         return aiMessage;
     }
 
@@ -67,7 +67,7 @@ public class AiService {
 
         ChatResponse aiResponse = aiModel.call(prompt);
         String aiMessage = aiResponse.getResult().getOutput().getContent();
-        log.info("AI Response From Title Generation: {}", aiMessage);
+        log.info("Call Simple Ai to title update...");
         return aiMessage;
     }
 }
