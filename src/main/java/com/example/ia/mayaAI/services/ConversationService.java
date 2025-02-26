@@ -108,7 +108,6 @@ public class ConversationService {
                 );
 
         String filesResumed = getIndexedFilesResumed(files, userMessageModel.getMessage());
-        log.info("Files Resumed: {}", filesResumed);
         this.setMessageModelFiles(userMessageModel, files);
 
         String aiResponse = aiService.callAIWithFilesResume(
