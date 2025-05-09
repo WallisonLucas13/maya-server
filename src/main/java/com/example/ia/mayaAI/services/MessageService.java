@@ -27,8 +27,8 @@ public class MessageService {
         this.mongoRepository = new MongoRepositoryImpl(mongoDatabase, MESSAGE_COLLECTION);
     }
 
-    public MessageModel saveMessage(MessageModel messageModel){
-        return mongoRepository.save(messageModel);
+    public void saveMessage(MessageModel messageModel){
+        mongoRepository.save(messageModel);
     }
 
     public List<MessageModel> getSortedMessages(String conversationId){

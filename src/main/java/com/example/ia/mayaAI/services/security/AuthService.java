@@ -8,13 +8,11 @@ import com.example.ia.mayaAI.repositories.common.MongoRepository;
 import com.example.ia.mayaAI.repositories.common.impl.MongoRepositoryImpl;
 import com.example.ia.mayaAI.responses.security.AuthResponse;
 import com.mongodb.client.MongoDatabase;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-@Slf4j
 public class AuthService {
 
     @Autowired

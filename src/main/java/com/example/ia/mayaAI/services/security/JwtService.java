@@ -6,7 +6,6 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.example.ia.mayaAI.models.UserModel;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +13,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
 
-@Log4j2
 @Service
 public class JwtService {
 
@@ -22,7 +20,7 @@ public class JwtService {
     private String SECRET_KEY;
     @Value("${api.security.jwt.expiration-time-hours}")
     private int EXPIRATION_TIME_HOURS;
-    private final String JWT_ISSUER = "maya-ai-security";
+    private static final String JWT_ISSUER = "maya-ai-security";
 
     public String generateToken(UserModel userModel) {
         try{
