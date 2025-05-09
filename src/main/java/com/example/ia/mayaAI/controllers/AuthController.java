@@ -51,8 +51,8 @@ public class AuthController {
         String currentDomain = ServletUriComponentsBuilder.fromCurrentRequestUri().build().getHost();
         Cookie cookie = new Cookie("Authorization", authResponse.token());
         cookie.setHttpOnly(true);
-        cookie.setPath(ServletUriComponentsBuilder.fromCurrentRequestUri().toUriString());
-        cookie.setSecure(Boolean.TRUE.equals(!DOMAIN_LOCAL.equals(currentDomain)));
+        cookie.setPath("/");
+        cookie.setSecure(!DOMAIN_LOCAL.equals(currentDomain));
 
         log.info("Setting cookie with domain: {}, to path: {}", currentDomain, cookie.getPath());
         response.addCookie(cookie);
