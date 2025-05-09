@@ -38,6 +38,7 @@ public class CookieService {
         cookie.setPath("/");
         cookie.setMaxAge(calculateCookieExpirationTime());
         cookie.setSecure(!DOMAIN_LOCAL.equals(currentDomain));
+        response.addHeader("Set-Cookie", String.format("%s; SameSite=Lax", cookie.toString()));
 
         log.info("Setting cookie with domain: {}, to path: {}", currentDomain, cookie.getPath());
         response.addCookie(cookie);
