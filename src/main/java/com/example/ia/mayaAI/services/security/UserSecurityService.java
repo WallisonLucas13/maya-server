@@ -22,6 +22,12 @@ public class UserSecurityService implements UserDetailsService {
         this.mongoRepository = new MongoRepositoryImpl(mongoDatabase, "users");
     }
 
+    /**
+     * Carrega o usuário pelo nome de usuário
+     * @param username Nome de usuário
+     * @return Detalhes do usuário
+     * @throws UsernameNotFoundException Se o usuário não for encontrado
+     */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserModel userModel = mongoRepository.findBy(FIND_BY_USERNAME, username, UserModel.class)

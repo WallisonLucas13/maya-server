@@ -29,6 +29,11 @@ public class AuthService {
         this.mongoRepository = new MongoRepositoryImpl(mongoDatabase, "users");
     }
 
+    /**
+     * Registra um novo usuário
+     * @param userModel Usuário a ser registrado
+     * @return Resposta de autenticação com o token gerado
+     */
     public AuthResponse register(UserModel userModel){
         this.userAlreadyRegistered(userModel.getUsername());
         userModel.setPassword(this.encodePassword(userModel.getPassword()));
@@ -37,6 +42,11 @@ public class AuthService {
         return new AuthResponse(token);
     }
 
+    /**
+     * Realiza o login do usuário
+     * @param userModel Usuário a ser autenticado
+     * @return Resposta de autenticação com o token gerado
+     */
     public AuthResponse login(UserModel userModel){
         UserModel user = mongoRepository
                 .findBy(FIND_BY_USERNAME, userModel.getUsername(), UserModel.class)
@@ -48,14 +58,19 @@ public class AuthService {
         throw new InvalidCredentialsException("Credenciais inválidas, confira seu usuário e senha!");
     }
 
-    public int getCookieExpirationTime() {
-        return jwtService.calculateCookieExpirationTime();
-    }
-
+    /**
+     * Codifica a senha do usuário
+     * @param password Senha a ser codificada
+     * @return Senha codificada
+     */
     private String encodePassword(String password){
         return passwordEncoder.encode(password);
     }
 
+    /**
+     * Verifica se o usuário já está registrado
+     * @param username Nome de usuário a ser verificado
+     */
     private void userAlreadyRegistered(String username){
         mongoRepository.findBy(FIND_BY_USERNAME, username, UserModel.class)
                 .ifPresent(user -> {

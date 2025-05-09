@@ -39,6 +39,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         .requestMatchers(HttpMethod.POST,"/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.DELETE,"/api/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .cors(cors -> cors
@@ -47,6 +48,8 @@ public class SecurityConfig {
                             corsConfiguration.setAllowedOrigins(List.of("http://localhost:4200", this.allowedOrigin));
                             corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                             corsConfiguration.setAllowedHeaders(List.of("*"));
+                            corsConfiguration.setExposedHeaders(List.of("Authorization", "Set-Cookie"));
+                            corsConfiguration.setAllowCredentials(true);
                             return corsConfiguration;
                         }))
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
