@@ -22,17 +22,17 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private final AuthService authService;
+
     /**
-     * Local domain for development purposes
+     * Dominio local para o ambiente de desenvolvimento
      */
     private static final String DOMAIN_LOCAL = "localhost";
-
-    private final AuthService authService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody UserInput userInput, HttpServletResponse response){
         UserModel userModel = UserConverter.convert(userInput);
-        AuthResponse authResponse = authService.login(userModel);
+        AuthResponse authResponse = authService.register(userModel);
 
         this.setCookieToResponse(authResponse, response);
         return ResponseEntity.ok(authResponse);
@@ -49,7 +49,7 @@ public class AuthController {
 
     private void setCookieToResponse(AuthResponse authResponse, HttpServletResponse response) {
         String currentDomain = ServletUriComponentsBuilder.fromCurrentRequestUri().build().getHost();
-        Cookie cookie = new Cookie("auth-token", authResponse.token());
+        Cookie cookie = new Cookie("Authorization", authResponse.token());
         cookie.setHttpOnly(true);
         cookie.setPath(ServletUriComponentsBuilder.fromCurrentRequestUri().toUriString());
         cookie.setSecure(Boolean.TRUE.equals(!DOMAIN_LOCAL.equals(currentDomain)));
