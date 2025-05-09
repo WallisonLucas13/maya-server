@@ -47,11 +47,17 @@ public class AuthController {
         return ResponseEntity.ok(authResponse);
     }
 
+    /**
+     * Configura o cookie de autenticação na resposta
+     * @param authResponse Resposta de autenticação
+     * @param response Resposta HTTP
+     */
     private void setCookieToResponse(AuthResponse authResponse, HttpServletResponse response) {
         String currentDomain = ServletUriComponentsBuilder.fromCurrentRequestUri().build().getHost();
         Cookie cookie = new Cookie("Authorization", authResponse.token());
         cookie.setHttpOnly(true);
-        cookie.setPath("/");
+        cookie.setPath(ServletUriComponentsBuilder.fromCurrentContextPath().build().getPath());
+        cookie.setMaxAge(authService.getCookieExpirationTime());
         cookie.setSecure(!DOMAIN_LOCAL.equals(currentDomain));
 
         log.info("Setting cookie with domain: {}, to path: {}", currentDomain, cookie.getPath());

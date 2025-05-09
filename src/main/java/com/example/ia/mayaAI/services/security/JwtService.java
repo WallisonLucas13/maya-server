@@ -30,12 +30,16 @@ public class JwtService {
             return JWT.create()
                     .withIssuer(JWT_ISSUER)
                     .withSubject(userModel.getUsername())
-                    .withExpiresAt(calculateExpirationDate())
+                    .withExpiresAt(calculateTokenExpirationDate())
                     .sign(algorithm);
 
         }catch(JWTCreationException e){
             throw new RuntimeException("Error creating JWT token");
         }
+    }
+
+    public int calculateCookieExpirationTime() {
+        return EXPIRATION_TIME_HOURS * 60 * 60;
     }
 
     public String validateToken(String token) throws JWTDecodeException, TokenExpiredException {
@@ -48,7 +52,7 @@ public class JwtService {
 
     }
 
-    private Date calculateExpirationDate() {
+    private Date calculateTokenExpirationDate() {
         ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("America/Sao_Paulo"))
                 .plusHours(EXPIRATION_TIME_HOURS);
         return Date.from(zonedDateTime.toInstant());

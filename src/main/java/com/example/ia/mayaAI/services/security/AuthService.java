@@ -50,6 +50,10 @@ public class AuthService {
         throw new InvalidCredentialsException("Credenciais inválidas, confira seu usuário e senha!");
     }
 
+    public int getCookieExpirationTime() {
+        return jwtService.calculateCookieExpirationTime();
+    }
+
     private String encodePassword(String password){
         return passwordEncoder.encode(password);
     }
