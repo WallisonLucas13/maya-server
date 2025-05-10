@@ -26,6 +26,8 @@ public class CookieService {
      */
     private static final String DOMAIN_LOCAL = "localhost";
 
+    private static final String AUTHORIZATION_COOKIE_NAME = "Authorization";
+
     /**
      * Configura o cookie de autenticação na resposta
      * @param authResponse Resposta de autenticação
@@ -33,15 +35,22 @@ public class CookieService {
      */
     public void setAuthCookieToResponse(AuthResponse authResponse, HttpServletResponse response) {
         String currentDomain = ServletUriComponentsBuilder.fromCurrentRequestUri().build().getHost();
-        Cookie cookie = new Cookie("Authorization", authResponse.token());
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(calculateCookieExpirationTime());
-        cookie.setSecure(!DOMAIN_LOCAL.equals(currentDomain));
-        response.addHeader("Set-Cookie", String.format("%s; SameSite=Lax", cookie.toString()));
 
-        log.info("Setting cookie with domain: {}, to path: {}", currentDomain, cookie.getPath());
-        response.addCookie(cookie);
+        String cookieValue = authResponse.token();
+        int maxAge = calculateCookieExpirationTime();
+        boolean isSecure = !DOMAIN_LOCAL.equals(currentDomain);
+        String sameSite = isSecure ? "None" : "Lax";
+
+        String cookieHeader = String.format(
+                "%s=%s; Path=/; Max-Age=%d; HttpOnly; %s; SameSite=%s",
+                AUTHORIZATION_COOKIE_NAME,
+                cookieValue,
+                maxAge,
+                isSecure ? "Secure" : "",
+                sameSite
+        );
+        response.setHeader("Set-Cookie", cookieHeader);
+        log.info("Setting manual cookie with domain: {}, secure: {}, SameSite=None", currentDomain, isSecure);
     }
 
     /**
@@ -50,14 +59,18 @@ public class CookieService {
      */
     public void removeAuthCookieToResponse(HttpServletResponse response) {
         String currentDomain = ServletUriComponentsBuilder.fromCurrentRequestUri().build().getHost();
-        Cookie cookie = new Cookie("Authorization", null);
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        cookie.setSecure(!DOMAIN_LOCAL.equals(currentDomain));
+        boolean isSecure = !DOMAIN_LOCAL.equals(currentDomain);
+        String sameSite = isSecure ? "None" : "Lax";
 
-        log.info("Removing cookie with path: {}", cookie.getPath());
-        response.addCookie(cookie);
+        String cookieHeader = String.format(
+                "%s=; Path=/; Max-Age=0; HttpOnly; %s; SameSite=%s",
+                AUTHORIZATION_COOKIE_NAME,
+                isSecure ? "Secure" : "",
+                sameSite
+        );
+
+        response.setHeader("Set-Cookie", cookieHeader);
+        log.info("Removed cookie manually with path / and SameSite=None");
     }
 
     /**
