@@ -1,58 +1,52 @@
 package com.example.ia.mayaAI.services;
 
-import com.example.ia.mayaAI.enums.DocumentSortDirection;
-import com.example.ia.mayaAI.models.MessageModel;
-import com.example.ia.mayaAI.repositories.common.MongoRepository;
-import com.example.ia.mayaAI.repositories.common.impl.MongoRepositoryImpl;
-import com.mongodb.client.MongoDatabase;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.messages.MessageType;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.ia.mayaAI.clients.OpenAIClient;
+import com.example.ia.mayaAI.requests.SimpleMessageRequest;
+import com.example.ia.mayaAI.requests.openai.MessageRequest;
+import com.example.ia.mayaAI.responses.SimpleMessageResponse;
+import com.example.ia.mayaAI.responses.openai.MessageResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.List;
+import java.util.Optional;
 
-@Slf4j
 @Service
 public class MessageService {
 
-    private final MongoRepository mongoRepository;
-    private static final String MESSAGE_COLLECTION = "message";
-    private static final String SORTED_FIELD = "createdAt";
-    private static final String FIND_BY_CONVERSATION_ID = "conversationId";
+    private final OpenAIClient openAIClient;
+    private final ConversationService conversationService;
+    private final String SYSTEM_PROMPT;
 
-    @Autowired
-    public MessageService(MongoDatabase mongoDatabase) {
-        this.mongoRepository = new MongoRepositoryImpl(mongoDatabase, MESSAGE_COLLECTION);
+    public MessageService(
+            @Value("${prompts.maya-common}") String systemPrompt,
+            OpenAIClient openAIClient,
+            ConversationService conversationService) {
+        SYSTEM_PROMPT = systemPrompt;
+        this.openAIClient = openAIClient;
+        this.conversationService = conversationService;
     }
 
-    public void saveMessage(MessageModel messageModel){
-        mongoRepository.save(messageModel);
+    public SimpleMessageResponse postMessage(String username, SimpleMessageRequest request, String sessionId) {
+        MessageRequest openAPIRequest = buildMessageRequest(username, request.getMessage(), sessionId);
+
+        MessageResponse response = openAIClient.postMessage(openAPIRequest);
+
+        return SimpleMessageResponse.builder()
+                .sessionId(openAPIRequest.getConversation())
+                .response(response.getOutput().get(0).getContent().get(0).getText())
+                .build();
     }
 
-    public List<MessageModel> getSortedMessages(String conversationId){
-        return mongoRepository
-                .findAllBy(
-                        FIND_BY_CONVERSATION_ID,
-                        conversationId,
-                        MessageModel.class,
-                        SORTED_FIELD,
-                        DocumentSortDirection.ASC
-                );
-    }
+    private MessageRequest buildMessageRequest(String username, String message, String sessionId) {
+        String conversationId = Optional.ofNullable(sessionId)
+                .orElseGet(() -> conversationService.createSessionId(username));
 
-    public MessageModel findLastUserMessage(String conversationId){
-        return this.getSortedMessages(conversationId)
-                .stream()
-                .filter(message -> message.getType().equals(MessageType.USER))
-                .max(Comparator.comparing(MessageModel::getCreatedAt))
-                .orElse(null);
+        return MessageRequest.builder()
+                .model("gpt-4o")
+                .input(message)
+                .conversation(conversationId)
+                .tool_choice("auto")
+                .instructions(SYSTEM_PROMPT)
+                .build();
     }
-
-    public long deleteMessagesByConversationId(String conversationId){
-        return mongoRepository
-                .deleteAllBy(FIND_BY_CONVERSATION_ID, conversationId);
-    }
-
 }
