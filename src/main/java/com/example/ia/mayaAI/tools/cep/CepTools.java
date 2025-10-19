@@ -1,8 +1,8 @@
 package com.example.ia.mayaAI.tools.cep;
 
-import com.example.ia.mayaAI.tools.Tool;
-import com.example.ia.mayaAI.tools.Tool.Parameters;
-import com.example.ia.mayaAI.tools.Tool.Parameters.Property;
+import com.example.ia.mayaAI.models.Tool;
+import com.example.ia.mayaAI.models.Tool.Parameters;
+import com.example.ia.mayaAI.models.Tool.Parameters.Property;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -33,7 +33,7 @@ public class CepTools{
                         .properties(Map.of(
                                 "address", Property.builder()
                                         .type("string")
-                                        .description("Endereço")
+                                        .description("Endereço completo no formato, por exemplo, 'Rua ABC' ou 'Av ABC'. Não é permitido informar um CEP.")
                                         .build()
                         ))
                         .required(new String[]{"address"})

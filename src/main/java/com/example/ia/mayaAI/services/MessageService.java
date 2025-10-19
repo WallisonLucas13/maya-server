@@ -6,13 +6,15 @@ import com.example.ia.mayaAI.requests.openai.FunctionCallOutputRequest;
 import com.example.ia.mayaAI.requests.openai.MessageRequest;
 import com.example.ia.mayaAI.responses.SimpleMessageResponse;
 import com.example.ia.mayaAI.responses.openai.MessageResponse;
-import com.example.ia.mayaAI.tools.cep.CepToolsFactory;
+import com.example.ia.mayaAI.responses.openai.MessageResponse.OutputResponse;
+import com.example.ia.mayaAI.tools.ToolsFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,31 +24,43 @@ public class MessageService {
 
     private final OpenAIClient openAIClient;
     private final ConversationService conversationService;
-    private final CepToolsFactory cepToolsFactory;
+    private final ToolsFactory toolsFactory;
     private final ObjectMapper objectMapper;
     private final String SYSTEM_PROMPT;
+    private final String TOOL_PROMPT;
 
     public MessageService(
             @Value("${prompts.maya-common}") String systemPrompt,
+            @Value("${prompts.tool-output}") String toolPrompt,
             OpenAIClient openAIClient,
             ConversationService conversationService,
-            CepToolsFactory cepToolsFactory,
+            ToolsFactory toolsFactory,
             ObjectMapper objectMapper) {
         SYSTEM_PROMPT = systemPrompt;
+        TOOL_PROMPT = toolPrompt;
         this.openAIClient = openAIClient;
         this.conversationService = conversationService;
-        this.cepToolsFactory = cepToolsFactory;
+        this.toolsFactory = toolsFactory;
         this.objectMapper = objectMapper;
     }
 
     public SimpleMessageResponse postMessage(String username, SimpleMessageRequest request, String sessionId){
         MessageRequest openAPIRequest = buildMessageRequest(username, request.getMessage(), sessionId);
-        MessageResponse response = openAIClient.postMessage(openAPIRequest);
-        String responseType = response.getOutput().get(0).getType();
+        List<FunctionCallOutputRequest> functionsCallHistory = new ArrayList<>();
 
-        while(responseType.equals("function_call")){
-            response = postFunctionCallOutput(request, response);
-            responseType = response.getOutput().get(0).getType();
+        FunctionCallOutputRequest userRequest = FunctionCallOutputRequest.builder()
+                .model("gpt-4.1")
+                .input(request.getMessage())
+                .build();
+
+        functionsCallHistory.add(userRequest);
+
+        log.info("Enviando mensagem do usuário {} para OpenAI", username);
+        MessageResponse response = openAIClient.postMessage(openAPIRequest);
+
+        while(response.getOutput().stream().anyMatch(output -> output.getType().equals("function_call"))){
+            log.info("Resposta contém chamadas de função. Processando...");
+            response = postFunctionCallOutput(response, functionsCallHistory);
         }
 
         return SimpleMessageResponse.builder()
@@ -63,53 +77,77 @@ public class MessageService {
                 .model("gpt-4.1")
                 .input(message)
                 .conversation(conversationId)
-                .tools(cepToolsFactory.getAllTools())
+                .tools(toolsFactory.getAllTools())
                 .tool_choice("auto")
                 .instructions(SYSTEM_PROMPT)
                 .build();
     }
 
-    private String processFunctionCall(MessageResponse response){
-        String toolName = response.getOutput().get(0).getName();
-        var parameters = response.getOutput().get(0).getArgumentsAsMap(objectMapper);
+    private MessageResponse postFunctionCallOutput(
+            MessageResponse response,
+            List<FunctionCallOutputRequest> functionsCallHistory
+    ){
+        processFunctionsCall(response.getOutput(), functionsCallHistory);
 
-        log.info("Processando chamada de função para a ferramenta: {} com parâmetros: {}", toolName, parameters);
-        Object res = cepToolsFactory.executeToolFunction(toolName, parameters);
         try {
-            return objectMapper.writeValueAsString(res);
+            String callOutputStr = objectMapper.writeValueAsString(functionsCallHistory);
+            FunctionCallOutputRequest functionOutputRequest = FunctionCallOutputRequest.builder()
+                    .model("gpt-4.1")
+                    .input(callOutputStr)
+                    .instructions(TOOL_PROMPT)
+                    .tools(toolsFactory.getAllTools())
+                    .tool_choice("auto")
+                    .build();
+
+            log.info("Enviando retorno da execução das funções para OpenAI");
+            return openAIClient.postMessage(functionOutputRequest);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private MessageResponse postFunctionCallOutput(SimpleMessageRequest request, MessageResponse response){
-        String output = processFunctionCall(response);
+    private void processFunctionsCall(
+            List<OutputResponse> outputs,
+            List<FunctionCallOutputRequest> functionsCallHistory
+    ){
 
-        FunctionCallOutputRequest initialRequest = FunctionCallOutputRequest.builder()
-                .model("gpt-4.1")
-                .input(request.getMessage())
-                .build();
+        for(OutputResponse output : outputs){
+            if(!output.getType().equals("function_call")){
+                throw new IllegalArgumentException("Output type is not function_call");
+            }
 
-        FunctionCallOutputRequest functionCall = FunctionCallOutputRequest.builder()
-                .type("function_call")
-                .id(response.getOutput().get(0).getId())
-                .call_id(response.getOutput().get(0).getCall_id())
-                .name(response.getOutput().get(0).getName())
-                .arguments(response.getOutput().get(0).getArguments())
-                .build();
+            //log.info("Registrando chamada de função na história: name={}, arguments={}", output.getName(), output.getArguments());
+            FunctionCallOutputRequest functionCall = FunctionCallOutputRequest.builder()
+                    .type("function_call")
+                    .id(output.getId())
+                    .call_id(output.getCall_id())
+                    .name(output.getName())
+                    .arguments(output.getArguments())
+                    .build();
 
-        FunctionCallOutputRequest callOutput = FunctionCallOutputRequest.builder()
-                .model("gpt-4.1")
-                .input(output)
-                .build();
+            functionsCallHistory.add(functionCall);
 
-        List<FunctionCallOutputRequest> callHistory = List.of(initialRequest, functionCall, callOutput);
+            //log.info("Processando chamada de função: name={}, arguments={}", output.getName(), output.getArguments());
+            String execResponse = executeFunctionCall(output);
 
+            FunctionCallOutputRequest functionCallOutput = FunctionCallOutputRequest.builder()
+                    .type("function_call_output")
+                    .model("gpt-4.1")
+                    .input(execResponse)
+                    .build();
+
+            //log.info("Registrando saída da função na história: output={}", execResponse);
+            functionsCallHistory.add(functionCallOutput);
+        }
+    }
+
+    private String executeFunctionCall(OutputResponse output){
+        String toolName = output.getName();
+        var parameters = output.getArgumentsAsMap(objectMapper);
+
+        Object res = toolsFactory.executeToolFunction(toolName, parameters);
         try {
-            String callOutputStr = objectMapper.writeValueAsString(callHistory);
-            callOutput.setInput(callOutputStr);
-
-            return openAIClient.postMessage(callOutput);
+            return objectMapper.writeValueAsString(res);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

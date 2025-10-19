@@ -1,4 +1,4 @@
-package com.example.ia.mayaAI.tools;
+package com.example.ia.mayaAI.models;
 
 import lombok.Builder;
 import lombok.Data;
