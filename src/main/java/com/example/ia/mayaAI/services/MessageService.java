@@ -112,7 +112,13 @@ public class MessageService {
 
         for(OutputResponse output : outputs){
             if(!output.getType().equals("function_call")){
-                throw new IllegalArgumentException("Output type is not function_call");
+                FunctionCallOutputRequest functionCall = FunctionCallOutputRequest.builder()
+                        .type("message")
+                        .input(output.getContent().get(0).getText())
+                        .build();
+
+                functionsCallHistory.add(functionCall);
+                continue;
             }
 
             log.info("function call: name={}, arguments={}", output.getName(), output.getArguments());

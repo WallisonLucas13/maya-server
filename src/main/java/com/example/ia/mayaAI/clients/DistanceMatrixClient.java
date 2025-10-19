@@ -12,4 +12,11 @@ public interface DistanceMatrixClient {
 
     @GetMapping("/geocode/json")
     Object getGeocodeAccurate(@RequestParam String address, @RequestParam String key);
+
+    @GetMapping("/distancematrix/json")
+    Object getDistanceMatrixAccurate(
+            @RequestParam String origins,
+            @RequestParam String destinations,
+            @RequestParam String key
+    );
 }

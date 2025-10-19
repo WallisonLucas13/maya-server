@@ -31,6 +31,11 @@ public class CepTools implements ToolProvider {
                 new ToolDefinition(getGeocodeAccurateTool(), (tool, params) -> {
                     String address = (String) params.get("address");
                     return cepService.getGeocodeAccurate(address);
+                }),
+                new ToolDefinition(getDistanceMatrixAccurateTool(), (tool, params) -> {
+                    String origins = (String) params.get("origins");
+                    String destinations = (String) params.get("destinations");
+                    return cepService.getDistanceMatrixAccurate(origins, destinations);
                 })
         );
     }
@@ -59,10 +64,30 @@ public class CepTools implements ToolProvider {
                         .properties(Map.of(
                                 "address", Property.builder()
                                         .type("string")
-                                        .description("Endereço completo no formato, por exemplo, 'Rua ABC' ou 'Av ABC'. Não é permitido informar um CEP.")
+                                        .description("Endereço completo. Exemplo: 'Rua ABC' ou 'Av ABC'. Não é permitido informar um CEP.")
                                         .build()
                         ))
                         .required(new String[]{"address"})
+                        .build())
+                .build();
+    }
+
+    public Tool getDistanceMatrixAccurateTool() {
+        return Tool.builder()
+                .name("distance_matrix_accurate")
+                .description("Calcula a matriz de distância entre as origens e destinos fornecidos.")
+                .parameters(Parameters.builder()
+                        .properties(Map.of(
+                                "origins", Property.builder()
+                                        .type("string")
+                                        .description("Endereço de origem. Exemplo: 'Rua ABC' ou 'Av ABC'. Não é permitido informar um CEP.")
+                                        .build(),
+                                "destinations", Property.builder()
+                                        .type("string")
+                                        .description("Endereço de destino. Exemplo: 'Rua ABC' ou 'Av ABC'. Não é permitido informar um CEP.")
+                                        .build()
+                        ))
+                        .required(new String[]{"origins", "destinations"})
                         .build())
                 .build();
     }

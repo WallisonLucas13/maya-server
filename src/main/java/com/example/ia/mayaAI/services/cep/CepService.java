@@ -30,4 +30,8 @@ public class CepService {
     public Object getGeocodeAccurate(String address) {
         return distanceMatrixClient.getGeocodeAccurate(address, DISTANCEMATRIX_APIKEY);
     }
+
+    public Object getDistanceMatrixAccurate(String origins, String destinations) {
+        return distanceMatrixClient.getDistanceMatrixAccurate(origins, destinations, DISTANCEMATRIX_APIKEY);
+    }
 }
