@@ -1,7 +1,6 @@
 package com.example.ia.mayaAI.clients;
 
 import com.example.ia.mayaAI.configs.OpenAIClientConfig;
-import com.example.ia.mayaAI.requests.openai.MessageRequest;
 import com.example.ia.mayaAI.responses.openai.MessageResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,5 +19,5 @@ public interface OpenAIClient {
     Map<String, Object> postConversation();
 
     @PostMapping("/responses")
-    MessageResponse postMessage(@RequestBody MessageRequest messageRequest);
+    <T> MessageResponse postMessage(@RequestBody T request);
 }
