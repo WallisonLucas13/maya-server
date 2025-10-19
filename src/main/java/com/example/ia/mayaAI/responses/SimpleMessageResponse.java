@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 @Builder
 public class SimpleMessageResponse {
-    private String sessionId;
+    private String conversationId;
     private String response;
 }

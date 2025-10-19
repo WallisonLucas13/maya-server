@@ -1,6 +1,11 @@
 package com.example.ia.mayaAI.services;
 
 import com.example.ia.mayaAI.clients.OpenAIClient;
+import com.example.ia.mayaAI.enums.SortDirection;
+import com.example.ia.mayaAI.models.ConversationModel;
+import com.example.ia.mayaAI.models.MessageModel;
+import com.example.ia.mayaAI.repositories.MongoRepository;
+import com.example.ia.mayaAI.repositories.impl.MongoRepositoryImpl;
 import com.example.ia.mayaAI.requests.SimpleMessageRequest;
 import com.example.ia.mayaAI.requests.openai.FunctionCallOutputRequest;
 import com.example.ia.mayaAI.requests.openai.MessageRequest;
@@ -8,15 +13,17 @@ import com.example.ia.mayaAI.responses.SimpleMessageResponse;
 import com.example.ia.mayaAI.responses.openai.MessageResponse;
 import com.example.ia.mayaAI.responses.openai.MessageResponse.OutputResponse;
 import com.example.ia.mayaAI.tools.ToolsFactory;
+import com.example.ia.mayaAI.utils.DateGenerateUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.client.MongoDatabase;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
 @Log4j2
 @Service
@@ -28,6 +35,7 @@ public class MessageService {
     private final ObjectMapper objectMapper;
     private final String SYSTEM_PROMPT;
     private final String TOOL_PROMPT;
+    private final MongoRepository repository;
 
     public MessageService(
             @Value("${prompts.maya-common}") String systemPrompt,
@@ -35,24 +43,29 @@ public class MessageService {
             OpenAIClient openAIClient,
             ConversationService conversationService,
             ToolsFactory toolsFactory,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            MongoDatabase database) {
         SYSTEM_PROMPT = systemPrompt;
         TOOL_PROMPT = toolPrompt;
         this.openAIClient = openAIClient;
         this.conversationService = conversationService;
         this.toolsFactory = toolsFactory;
         this.objectMapper = objectMapper;
+        this.repository = new MongoRepositoryImpl(database, "message");
     }
 
-    public SimpleMessageResponse postMessage(String username, SimpleMessageRequest request, String sessionId){
-        MessageRequest openAPIRequest = buildMessageRequest(username, request.getMessage(), sessionId);
+    public SimpleMessageResponse postMessage(String username, SimpleMessageRequest request, String conversationId){
+        ConversationModel validConversationModel = conversationService
+                .getValidConversation(username, conversationId);
+        buildAndSaveMessage(validConversationModel.getId(), "USER", request.getMessage());
+
+        MessageRequest openAPIRequest = buildMessageRequest(validConversationModel.getId());
         List<FunctionCallOutputRequest> functionsCallHistory = new ArrayList<>();
 
         FunctionCallOutputRequest userRequest = FunctionCallOutputRequest.builder()
                 .model("gpt-4.1")
                 .input(request.getMessage())
                 .build();
-
         functionsCallHistory.add(userRequest);
 
         log.info("Enviando mensagem do usuário {} para OpenAI", username);
@@ -62,20 +75,21 @@ public class MessageService {
             response = postFunctionCallOutput(response, functionsCallHistory);
         }
 
+        String finalResponse = response.getOutput().get(0).getContent().get(0).getText();
+
+        buildAndSaveMessage(validConversationModel.getId(), "SYSTEM", finalResponse);
         return SimpleMessageResponse.builder()
-                .sessionId(openAPIRequest.getConversation())
-                .response(response.getOutput().get(0).getContent().get(0).getText())
+                .conversationId(validConversationModel.getId())
+                .response(finalResponse)
                 .build();
     }
 
-    private MessageRequest buildMessageRequest(String username, String message, String sessionId) {
-        String conversationId = Optional.ofNullable(sessionId)
-                .orElseGet(() -> conversationService.createSessionId(username));
+    private MessageRequest buildMessageRequest(String conversationId) {
+        String messagesContextStr = getMessagesContextStr(conversationId);
 
         return MessageRequest.builder()
                 .model("gpt-4.1")
-                .input(message)
-                .conversation(conversationId)
+                .input(messagesContextStr)
                 .tools(toolsFactory.getAllTools())
                 .tool_choice("auto")
                 .instructions(SYSTEM_PROMPT)
@@ -152,6 +166,37 @@ public class MessageService {
         Object res = toolsFactory.executeToolFunction(toolName, parameters);
         try {
             return objectMapper.writeValueAsString(res);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void buildAndSaveMessage(String conversationId, String type, String text){
+        MessageModel messageModel = MessageModel.builder()
+                .id(UUID.randomUUID().toString())
+                .conversationId(conversationId)
+                .type(type)
+                .text(text)
+                .createdAt(DateGenerateUtil.now())
+                .build();
+
+        repository.save(messageModel);
+    }
+
+    private String getMessagesContextStr(String conversationId) {
+        List<MessageModel> messages = repository.findAllBy(
+                "conversationId",
+                conversationId,
+                MessageModel.class,
+                "createdAt",
+                SortDirection.DESC
+        ).stream()
+                .limit(5)
+                .sorted((m1, m2) -> m1.getCreatedAt().compareTo(m2.getCreatedAt()))
+                .toList();
+
+        try {
+            return objectMapper.writeValueAsString(messages);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

@@ -15,7 +15,6 @@ import java.util.List;
 public class MessageRequest {
     private String model;
     private String input;
-    private String conversation;
     private String instructions;
     public List<Tool> tools;
     private String tool_choice;

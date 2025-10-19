@@ -45,7 +45,7 @@ Todas as mensagens e conversas são salvas em um banco de dados MySQL. O histór
 **Payload:**
 ```json
 {
-  "message": "Oii"
+  "messageModel": "Oii"
 }
 ```
 
@@ -55,7 +55,7 @@ Todas as mensagens e conversas são salvas em um banco de dados MySQL. O histór
   "conversationId": "9255c886-713a-4cf4-bc09-415627b715f7",
   "id": "1beaa2cd-fe6f-4662-ad4a-8b0a1d43ce12",
   "type": "SYSTEM",
-  "message": "Oi, Wallison! Como posso ajudar você hoje?",
+  "messageModel": "Oi, Wallison! Como posso ajudar você hoje?",
   "createdAt": "2024-11-12T22:32:29.469337066"
 }
 ```
@@ -77,14 +77,14 @@ Todas as mensagens e conversas são salvas em um banco de dados MySQL. O histór
       "conversationId": "9255c886-713a-4cf4-bc09-415627b715f7",
       "id": "30f5f5c0-c1f9-4a8e-b1df-af1181638264",
       "type": "USER",
-      "message": "Oii",
+      "messageModel": "Oii",
       "createdAt": "2024-11-12T22:32:23.761059"
     },
     {
       "conversationId": "9255c886-713a-4cf4-bc09-415627b715f7",
       "id": "1beaa2cd-fe6f-4662-ad4a-8b0a1d43ce12",
       "type": "SYSTEM",
-      "message": "Oi, Wallison! Como posso ajudar você hoje?",
+      "messageModel": "Oi, Wallison! Como posso ajudar você hoje?",
       "createdAt": "2024-11-12T22:32:29.469337"
     }
   ],

@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/conversation")
+@RequestMapping("/api/message")
 public class MessageController {
 
     private final MessageService messageService;
@@ -20,10 +20,9 @@ public class MessageController {
     public ResponseEntity<SimpleMessageResponse> postMessage(
             @RequestHeader("username") String username,
             @RequestBody SimpleMessageRequest request,
-            @RequestParam(value = "sessionId", required = false) String sessionId
+            @RequestParam(value = "conversationId", required = false) String conversationId
     ){
         return ResponseEntity.ok(messageService
-                .postMessage(username, request, sessionId));
+                .postMessage(username, request, conversationId));
     };
-
 }
