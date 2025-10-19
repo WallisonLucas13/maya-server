@@ -1,6 +1,5 @@
 package com.example.ia.mayaAI.tools;
 
-import com.example.ia.mayaAI.services.cep.CepService;
 import com.example.ia.mayaAI.models.Tool;
 import com.example.ia.mayaAI.tools.cep.CepTools;
 import lombok.extern.log4j.Log4j2;
@@ -14,35 +13,12 @@ import java.util.function.BiFunction;
 @Service
 public class ToolsFactory {
 
-    private final CepService cepService;
-    private final CepTools cepTools;
-    private final Map<String, ToolFunctionPair> tools;
+    private final Map<String, ToolFunctionPair> tools = new java.util.HashMap<>();
 
-    public ToolsFactory(CepService cepService, CepTools cepTools) {
-        this.cepService = cepService;
-        this.cepTools = cepTools;
-        this.tools = registerTools();
-    }
+    public ToolsFactory(CepTools cepTools) {
+        cepTools.registerTools(tools);
 
-    private Map<String, ToolFunctionPair> registerTools(){
-        return Map.of(
-                cepTools.getAddressDetailsTool().getName(), new ToolFunctionPair(
-                        cepTools.getAddressDetailsTool(),
-                        (tool, params) -> {
-                            String cep = (String) params.get("cep");
-                            log.info("Executando ferramenta: {} com parâmetro cep={}", tool.getName(), cep);
-                            return cepService.getAddressDetails(cep);
-                        }
-                ),
-                cepTools.getGeocodeAccurateTool().getName(), new ToolFunctionPair(
-                        cepTools.getGeocodeAccurateTool(),
-                        (tool, params) -> {
-                            String address = (String) params.get("address");
-                            log.info("Executando ferramenta: {} com parâmetro address={}", tool.getName(), address);
-                            return cepService.getGeocodeAccurate(address);
-                        }
-                )
-        );
+        log.info("Registered tools: " + tools.keySet());
     }
 
     public List<Tool> getAllTools() {
@@ -67,5 +43,5 @@ public class ToolsFactory {
         return pair.function().apply(pair.tool(), params);
     }
 
-    private record ToolFunctionPair(Tool tool, BiFunction<Tool, Map<String, Object>, Object> function) {}
+    public record ToolFunctionPair(Tool tool, BiFunction<Tool, Map<String, Object>, Object> function) {}
 }

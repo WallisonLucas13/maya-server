@@ -59,7 +59,6 @@ public class MessageService {
         MessageResponse response = openAIClient.postMessage(openAPIRequest);
 
         while(response.getOutput().stream().anyMatch(output -> output.getType().equals("function_call"))){
-            log.info("Resposta contém chamadas de função. Processando...");
             response = postFunctionCallOutput(response, functionsCallHistory);
         }
 
@@ -99,7 +98,7 @@ public class MessageService {
                     .tool_choice("auto")
                     .build();
 
-            log.info("Enviando retorno da execução das funções para OpenAI");
+            log.info("Send function call output to OpenAI: {}", callOutputStr);
             return openAIClient.postMessage(functionOutputRequest);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -116,7 +115,7 @@ public class MessageService {
                 throw new IllegalArgumentException("Output type is not function_call");
             }
 
-            //log.info("Registrando chamada de função na história: name={}, arguments={}", output.getName(), output.getArguments());
+            log.info("function call: name={}, arguments={}", output.getName(), output.getArguments());
             FunctionCallOutputRequest functionCall = FunctionCallOutputRequest.builder()
                     .type("function_call")
                     .id(output.getId())
@@ -127,7 +126,6 @@ public class MessageService {
 
             functionsCallHistory.add(functionCall);
 
-            //log.info("Processando chamada de função: name={}, arguments={}", output.getName(), output.getArguments());
             String execResponse = executeFunctionCall(output);
 
             FunctionCallOutputRequest functionCallOutput = FunctionCallOutputRequest.builder()
@@ -136,7 +134,7 @@ public class MessageService {
                     .input(execResponse)
                     .build();
 
-            //log.info("Registrando saída da função na história: output={}", execResponse);
+            log.info("function call output: name={}, arguments={}", output.getName(), output.getArguments());
             functionsCallHistory.add(functionCallOutput);
         }
     }
