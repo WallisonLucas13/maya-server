@@ -1,7 +1,6 @@
 package com.example.ia.mayaAI.tools;
 
 import com.example.ia.mayaAI.models.Tool;
-import com.example.ia.mayaAI.tools.cep.CepTools;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -12,11 +11,14 @@ import java.util.function.BiFunction;
 @Log4j2
 @Service
 public class ToolsFactory {
-
     private final Map<String, ToolFunctionPair> tools = new java.util.HashMap<>();
 
-    public ToolsFactory(CepTools cepTools) {
-        cepTools.registerTools(tools);
+    public ToolsFactory(List<ToolProvider> providers) {
+        providers.forEach(provider ->
+                provider.getToolDefinitions().forEach(def ->
+                        tools.put(def.tool().getName(), new ToolFunctionPair(def.tool(), def.function()))
+                )
+        );
 
         log.info("Registered tools: " + tools.keySet());
     }

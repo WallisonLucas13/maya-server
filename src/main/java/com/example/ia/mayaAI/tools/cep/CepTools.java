@@ -4,18 +4,35 @@ import com.example.ia.mayaAI.models.Tool;
 import com.example.ia.mayaAI.models.Tool.Parameters;
 import com.example.ia.mayaAI.models.Tool.Parameters.Property;
 import com.example.ia.mayaAI.services.cep.CepService;
+import com.example.ia.mayaAI.tools.ToolDefinition;
+import com.example.ia.mayaAI.tools.ToolProvider;
 import com.example.ia.mayaAI.tools.ToolsFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
-public class CepTools{
+public class CepTools implements ToolProvider {
 
     private final CepService cepService;
 
     public CepTools(CepService cepService) {
         this.cepService = cepService;
+    }
+
+    @Override
+    public List<ToolDefinition> getToolDefinitions() {
+        return List.of(
+                new ToolDefinition(getAddressDetailsTool(), (tool, params) -> {
+                    String cep = (String) params.get("cep");
+                    return cepService.getAddressDetails(cep);
+                }),
+                new ToolDefinition(getGeocodeAccurateTool(), (tool, params) -> {
+                    String address = (String) params.get("address");
+                    return cepService.getGeocodeAccurate(address);
+                })
+        );
     }
 
     public Tool getAddressDetailsTool() {
@@ -48,25 +65,5 @@ public class CepTools{
                         .required(new String[]{"address"})
                         .build())
                 .build();
-    }
-
-    public void registerTools(Map<String, ToolsFactory.ToolFunctionPair> tools){
-        Tool cepAddressDetailsTool = getAddressDetailsTool();
-        Tool geocodeAccurateTool = getGeocodeAccurateTool();
-
-        tools.put(cepAddressDetailsTool.getName(), new ToolsFactory.ToolFunctionPair(
-                cepAddressDetailsTool,
-                (tool, params) -> {
-                    String cep = (String) params.get("cep");
-                    return cepService.getAddressDetails(cep);
-                }
-        ));
-        tools.put(geocodeAccurateTool.getName(), new ToolsFactory.ToolFunctionPair(
-                geocodeAccurateTool,
-                (tool, params) -> {
-                    String address = (String) params.get("address");
-                    return cepService.getGeocodeAccurate(address);
-                }
-        ));
     }
 }
